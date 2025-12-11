@@ -1,0 +1,44 @@
+
+{% extends "base.html" %}
+
+{% block title %}编辑选课记录 - 学生信息管理系统{% endblock %}
+
+{% block header %}编辑选课记录{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">选课信息</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="mb-3">
+                        <label class="form-label">学生</label>
+                        <div class="form-control-plaintext">
+                            {{ enrollment.student_id }} - {{ enrollment.student_name }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">课程</label>
+                        <div class="form-control-plaintext">
+                            {{ enrollment.code }} - {{ enrollment.course_name }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="semester" class="form-label">学期</label>
+                        <input type="text" class="form-control" id="semester" name="semester" value="{{ enrollment.semester }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="grade" class="form-label">成绩</label>
+                        <input type="number" class="form-control" id="grade" name="grade" min="0" max="100" step="0.1" value="{{ enrollment.grade }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary">保存更改</button>
+                    <a href="{{ url_for('enrollments') }}" class="btn btn-secondary">取消</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,94 @@
+
+{% extends "base.html" %}
+
+{% block title %}编辑学生 - 学生信息管理系统{% endblock %}
+
+{% block header %}编辑学生{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">学生信息</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="student_id" class="form-label">学号</label>
+                            <input type="text" class="form-control" id="student_id" name="student_id" value="{{ student.student_id }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">姓名</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ student.name }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="gender" class="form-label">性别</label>
+                            <select class="form-select" id="gender" name="gender" required>
+                                <option value="">请选择</option>
+                                <option value="男" {% if student.gender == '男' %}selected{% endif %}>男</option>
+                                <option value="女" {% if student.gender == '女' %}selected{% endif %}>女</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="birth_date" class="form-label">出生日期</label>
+                            <input type="date" class="form-control" id="birth_date" name="birth_date" value="{{ student.birth_date }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">联系电话</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" value="{{ student.phone }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">电子邮箱</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ student.email }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="major_id" class="form-label">专业</label>
+                            <select class="form-select" id="major_id" name="major_id">
+                                <option value="">请选择</option>
+                                {% for major in majors %}
+                                <option value="{{ major.id }}" {% if student.major_id == major.id %}selected{% endif %}>{{ major.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="class_id" class="form-label">班级</label>
+                            <select class="form-select" id="class_id" name="class_id">
+                                <option value="">请选择</option>
+                                {% for class in classes %}
+                                <option value="{{ class.id }}" {% if student.class_id == class.id %}selected{% endif %}>{{ class.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="enrollment_date" class="form-label">入学日期</label>
+                            <input type="date" class="form-control" id="enrollment_date" name="enrollment_date" value="{{ student.enrollment_date }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="address" class="form-label">家庭住址</label>
+                        <textarea class="form-control" id="address" name="address" rows="3">{{ student.address }}</textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">保存更改</button>
+                    <a href="{{ url_for('students') }}" class="btn btn-secondary">取消</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

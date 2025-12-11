@@ -1,0 +1,841 @@
+
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+import sqlite3
+from functools import wraps
+from datetime import datetime
+
+app = Flask(__name__)
+app.secret_key = 'your_secret_key_here'  # 用于session加密
+
+# 数据库初始化
+def init_db():
+    conn = sqlite3.connect('student_management.db')
+    cursor = conn.cursor()
+
+    # 用户表
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        role TEXT NOT NULL DEFAULT 'user',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # 学生信息表
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS students (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        gender TEXT NOT NULL,
+        birth_date TEXT,
+        address TEXT,
+        phone TEXT,
+        email TEXT,
+        major_id INTEGER,
+        class_id INTEGER,
+        enrollment_date TEXT,
+        created_by INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (major_id) REFERENCES majors (id),
+        FOREIGN KEY (class_id) REFERENCES classes (id),
+        FOREIGN KEY (created_by) REFERENCES users (id)
+    )
+    """)
+
+    # 专业表
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS majors (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # 班级表
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS classes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
+        major_id INTEGER,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (major_id) REFERENCES majors (id)
+    )
+    """)
+
+    # 课程表
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS courses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        credits INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # 学生选课表
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS enrollments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER,
+        course_id INTEGER,
+        grade REAL,
+        semester TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (student_id) REFERENCES students (id),
+        FOREIGN KEY (course_id) REFERENCES courses (id)
+    )
+    """)
+
+    # 检查是否已有管理员用户，如果没有则创建
+    cursor.execute("SELECT * FROM users WHERE role='admin'")
+    if not cursor.fetchone():
+        cursor.execute("INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)",
+                      ("admin", "admin123", "admin@example.com", "admin"))
+
+    conn.commit()
+    conn.close()
+
+# 登录验证装饰器
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# 管理员权限验证装饰器
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "user_id" not in session or session.get("role") != "admin":
+            flash("您没有权限访问此页面")
+            return redirect(url_for("dashboard"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# 获取数据库连接
+def get_db_connection():
+    conn = sqlite3.connect("student_management.db")
+    conn.row_factory = sqlite3.Row
+    return conn
+
+# 首页
+@app.route("/")
+def index():
+    if "user_id" in session:
+        return redirect(url_for("dashboard"))
+    return redirect(url_for("login"))
+
+# 登录页面
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+
+        conn = get_db_connection()
+        user = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+        conn.close()
+
+        if user and user["password"] == password:
+            session["user_id"] = user["id"]
+            session["username"] = user["username"]
+            session["role"] = user["role"]
+            flash("登录成功！")
+            return redirect(url_for("dashboard"))
+        else:
+            flash("用户名或密码错误")
+
+    return render_template("login.html")
+
+# 注册页面
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        email = request.form["email"]
+
+        # 检查用户名是否已存在
+        conn = get_db_connection()
+        existing_user = conn.execute("SELECT * FROM users WHERE username = ? OR email = ?", 
+                                    (username, email)).fetchone()
+
+        if existing_user:
+            flash("用户名或邮箱已存在")
+            conn.close()
+            return render_template("register.html")
+
+        # 创建新用户
+        conn.execute("INSERT INTO users (username, password, email) VALUES (?, ?, ?)",
+                    (username, password, email))
+        conn.commit()
+        conn.close()
+
+        flash("注册成功，请登录")
+        return redirect(url_for("login"))
+
+    return render_template("register.html")
+
+# 登出
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("您已成功登出")
+    return redirect(url_for("login"))
+
+# 仪表盘
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    conn = get_db_connection()
+
+    # 获取统计信息
+    student_count = conn.execute("SELECT COUNT(*) as count FROM students").fetchone()["count"]
+    major_count = conn.execute("SELECT COUNT(*) as count FROM majors").fetchone()["count"]
+    class_count = conn.execute("SELECT COUNT(*) as count FROM classes").fetchone()["count"]
+    course_count = conn.execute("SELECT COUNT(*) as count FROM courses").fetchone()["count"]
+
+    conn.close()
+
+    return render_template("dashboard.html", 
+                          student_count=student_count,
+                          major_count=major_count,
+                          class_count=class_count,
+                          course_count=course_count)
+
+# 用户管理 - 管理员专用
+@app.route("/users")
+@login_required
+@admin_required
+def users():
+    conn = get_db_connection()
+    users = conn.execute("SELECT * FROM users ORDER BY created_at DESC").fetchall()
+    conn.close()
+    return render_template("users/index.html", users=users)
+
+# 创建用户 - 管理员专用
+@app.route("/users/create", methods=["GET", "POST"])
+@login_required
+@admin_required
+def create_user():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        email = request.form["email"]
+        role = request.form["role"]
+
+        conn = get_db_connection()
+        try:
+            conn.execute("INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)",
+                        (username, password, email, role))
+            conn.commit()
+            flash("用户创建成功")
+            return redirect(url_for("users"))
+        except sqlite3.IntegrityError:
+            flash("用户名或邮箱已存在")
+        finally:
+            conn.close()
+
+    return render_template("users/create.html")
+
+# 编辑用户 - 管理员专用
+@app.route("/users/<int:user_id>/edit", methods=["GET", "POST"])
+@login_required
+@admin_required
+def edit_user(user_id):
+    conn = get_db_connection()
+    user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+
+    if request.method == "POST":
+        username = request.form["username"]
+        email = request.form["email"]
+        role = request.form["role"]
+        password = request.form.get("password")
+
+        if password:
+            conn.execute("UPDATE users SET username = ?, email = ?, role = ?, password = ? WHERE id = ?",
+                        (username, email, role, password, user_id))
+        else:
+            conn.execute("UPDATE users SET username = ?, email = ?, role = ? WHERE id = ?",
+                        (username, email, role, user_id))
+
+        conn.commit()
+        flash("用户信息更新成功")
+        return redirect(url_for("users"))
+
+    conn.close()
+    return render_template("users/edit.html", user=user)
+
+# 删除用户 - 管理员专用
+@app.route("/users/<int:user_id>/delete", methods=["POST"])
+@login_required
+@admin_required
+def delete_user(user_id):
+    conn = get_db_connection()
+    conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+    flash("用户删除成功")
+    return redirect(url_for("users"))
+
+# 学生信息管理
+@app.route("/students")
+@login_required
+def students():
+    conn = get_db_connection()
+
+    if session.get("role") == "admin":
+        students = conn.execute("""
+            SELECT s.*, m.name as major_name, c.name as class_name, u.username as created_by_name
+            FROM students s
+            LEFT JOIN majors m ON s.major_id = m.id
+            LEFT JOIN classes c ON s.class_id = c.id
+            LEFT JOIN users u ON s.created_by = u.id
+            ORDER BY s.created_at DESC
+        """).fetchall()
+    else:
+        # 普通用户只能看到自己创建的学生信息
+        students = conn.execute("""
+            SELECT s.*, m.name as major_name, c.name as class_name
+            FROM students s
+            LEFT JOIN majors m ON s.major_id = m.id
+            LEFT JOIN classes c ON s.class_id = c.id
+            WHERE s.created_by = ?
+            ORDER BY s.created_at DESC
+        """, (session["user_id"],)).fetchall()
+
+    conn.close()
+    return render_template("students/index.html", students=students)
+
+# 创建学生信息
+@app.route("/students/create", methods=["GET", "POST"])
+@login_required
+def create_student():
+    conn = get_db_connection()
+
+    if request.method == "POST":
+        student_id = request.form["student_id"]
+        name = request.form["name"]
+        gender = request.form["gender"]
+        birth_date = request.form.get("birth_date")
+        address = request.form.get("address")
+        phone = request.form.get("phone")
+        email = request.form.get("email")
+        major_id = request.form.get("major_id")
+        class_id = request.form.get("class_id")
+        enrollment_date = request.form.get("enrollment_date")
+
+        try:
+            conn.execute("""
+                INSERT INTO students 
+                (student_id, name, gender, birth_date, address, phone, email, major_id, class_id, enrollment_date, created_by)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (student_id, name, gender, birth_date, address, phone, email, major_id, class_id, enrollment_date, session["user_id"]))
+            conn.commit()
+            flash("学生信息创建成功")
+            return redirect(url_for("students"))
+        except sqlite3.IntegrityError:
+            flash("学号已存在")
+        finally:
+            conn.close()
+
+    # 获取专业和班级列表
+    majors = conn.execute("SELECT * FROM majors ORDER BY name").fetchall()
+    classes = conn.execute("SELECT * FROM classes ORDER BY name").fetchall()
+    conn.close()
+
+    return render_template("students/create.html", majors=majors, classes=classes)
+
+# 编辑学生信息
+@app.route("/students/<int:student_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_student(student_id):
+    conn = get_db_connection()
+
+    # 获取学生信息
+    student = conn.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
+
+    # 权限检查：普通用户只能编辑自己创建的学生信息
+    if session.get("role") != "admin" and student["created_by"] != session["user_id"]:
+        flash("您没有权限编辑此学生信息")
+        return redirect(url_for("students"))
+
+    if request.method == "POST":
+        name = request.form["name"]
+        gender = request.form["gender"]
+        birth_date = request.form.get("birth_date")
+        address = request.form.get("address")
+        phone = request.form.get("phone")
+        email = request.form.get("email")
+        major_id = request.form.get("major_id")
+        class_id = request.form.get("class_id")
+        enrollment_date = request.form.get("enrollment_date")
+
+        conn.execute("""
+            UPDATE students SET 
+            name = ?, gender = ?, birth_date = ?, address = ?, phone = ?, 
+            email = ?, major_id = ?, class_id = ?, enrollment_date = ?
+            WHERE id = ?
+        """, (name, gender, birth_date, address, phone, email, major_id, class_id, enrollment_date, student_id))
+
+        conn.commit()
+        flash("学生信息更新成功")
+        return redirect(url_for("students"))
+
+    # 获取专业和班级列表
+    majors = conn.execute("SELECT * FROM majors ORDER BY name").fetchall()
+    classes = conn.execute("SELECT * FROM classes ORDER BY name").fetchall()
+    conn.close()
+
+    return render_template("students/edit.html", student=student, majors=majors, classes=classes)
+
+# 删除学生信息
+@app.route("/students/<int:student_id>/delete", methods=["POST"])
+@login_required
+def delete_student(student_id):
+    conn = get_db_connection()
+
+    # 获取学生信息
+    student = conn.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
+
+    # 权限检查：普通用户只能删除自己创建的学生信息
+    if session.get("role") != "admin" and student["created_by"] != session["user_id"]:
+        flash("您没有权限删除此学生信息")
+        return redirect(url_for("students"))
+
+    conn.execute("DELETE FROM students WHERE id = ?", (student_id,))
+    conn.commit()
+    conn.close()
+    flash("学生信息删除成功")
+    return redirect(url_for("students"))
+
+# 专业管理
+@app.route("/majors")
+@login_required
+def majors():
+    conn = get_db_connection()
+    majors = conn.execute("SELECT * FROM majors ORDER BY name").fetchall()
+    conn.close()
+    return render_template("majors/index.html", majors=majors)
+
+# 创建专业
+@app.route("/majors/create", methods=["GET", "POST"])
+@login_required
+@admin_required
+def create_major():
+    if request.method == "POST":
+        name = request.form["name"]
+        description = request.form.get("description")
+
+        conn = get_db_connection()
+        try:
+            conn.execute("INSERT INTO majors (name, description) VALUES (?, ?)", (name, description))
+            conn.commit()
+            flash("专业创建成功")
+            return redirect(url_for("majors"))
+        except sqlite3.IntegrityError:
+            flash("专业名称已存在")
+        finally:
+            conn.close()
+
+    return render_template("majors/create.html")
+
+# 编辑专业
+@app.route("/majors/<int:major_id>/edit", methods=["GET", "POST"])
+@login_required
+@admin_required
+def edit_major(major_id):
+    conn = get_db_connection()
+    major = conn.execute("SELECT * FROM majors WHERE id = ?", (major_id,)).fetchone()
+
+    if request.method == "POST":
+        name = request.form["name"]
+        description = request.form.get("description")
+
+        try:
+            conn.execute("UPDATE majors SET name = ?, description = ? WHERE id = ?", 
+                        (name, description, major_id))
+            conn.commit()
+            flash("专业信息更新成功")
+            return redirect(url_for("majors"))
+        except sqlite3.IntegrityError:
+            flash("专业名称已存在")
+        finally:
+            conn.close()
+
+    conn.close()
+    return render_template("majors/edit.html", major=major)
+
+# 删除专业
+@app.route("/majors/<int:major_id>/delete", methods=["POST"])
+@login_required
+@admin_required
+def delete_major(major_id):
+    conn = get_db_connection()
+
+    # 检查是否有学生使用该专业
+    students = conn.execute("SELECT COUNT(*) as count FROM students WHERE major_id = ?", 
+                           (major_id,)).fetchone()["count"]
+
+    if students > 0:
+        flash(f"该专业下还有 {students} 名学生，无法删除")
+    else:
+        conn.execute("DELETE FROM majors WHERE id = ?", (major_id,))
+        conn.commit()
+        flash("专业删除成功")
+
+    conn.close()
+    return redirect(url_for("majors"))
+
+# 班级管理
+@app.route("/classes")
+@login_required
+def classes():
+    conn = get_db_connection()
+    classes = conn.execute("""
+        SELECT c.*, m.name as major_name 
+        FROM classes c
+        LEFT JOIN majors m ON c.major_id = m.id
+        ORDER BY c.name
+    """).fetchall()
+    conn.close()
+    return render_template("classes/index.html", classes=classes)
+
+# 创建班级
+@app.route("/classes/create", methods=["GET", "POST"])
+@login_required
+@admin_required
+def create_class():
+    conn = get_db_connection()
+
+    if request.method == "POST":
+        name = request.form["name"]
+        major_id = request.form.get("major_id")
+        description = request.form.get("description")
+
+        try:
+            conn.execute("INSERT INTO classes (name, major_id, description) VALUES (?, ?, ?)", 
+                        (name, major_id, description))
+            conn.commit()
+            flash("班级创建成功")
+            return redirect(url_for("classes"))
+        except sqlite3.IntegrityError:
+            flash("班级名称已存在")
+        finally:
+            conn.close()
+
+    # 获取专业列表
+    majors = conn.execute("SELECT * FROM majors ORDER BY name").fetchall()
+    conn.close()
+
+    return render_template("classes/create.html", majors=majors)
+
+# 编辑班级
+@app.route("/classes/<int:class_id>/edit", methods=["GET", "POST"])
+@login_required
+@admin_required
+def edit_class(class_id):
+    conn = get_db_connection()
+    class_info = conn.execute("""
+        SELECT c.*, m.name as major_name 
+        FROM classes c
+        LEFT JOIN majors m ON c.major_id = m.id
+        WHERE c.id = ?
+    """, (class_id,)).fetchone()
+
+    if request.method == "POST":
+        name = request.form["name"]
+        major_id = request.form.get("major_id")
+        description = request.form.get("description")
+
+        try:
+            conn.execute("UPDATE classes SET name = ?, major_id = ?, description = ? WHERE id = ?", 
+                        (name, major_id, description, class_id))
+            conn.commit()
+            flash("班级信息更新成功")
+            return redirect(url_for("classes"))
+        except sqlite3.IntegrityError:
+            flash("班级名称已存在")
+        finally:
+            conn.close()
+
+    # 获取专业列表
+    majors = conn.execute("SELECT * FROM majors ORDER BY name").fetchall()
+    conn.close()
+
+    return render_template("classes/edit.html", class_info=class_info, majors=majors)
+
+# 删除班级
+@app.route("/classes/<int:class_id>/delete", methods=["POST"])
+@login_required
+@admin_required
+def delete_class(class_id):
+    conn = get_db_connection()
+
+    # 检查是否有学生使用该班级
+    students = conn.execute("SELECT COUNT(*) as count FROM students WHERE class_id = ?", 
+                           (class_id,)).fetchone()["count"]
+
+    if students > 0:
+        flash(f"该班级下还有 {students} 名学生，无法删除")
+    else:
+        conn.execute("DELETE FROM classes WHERE id = ?", (class_id,))
+        conn.commit()
+        flash("班级删除成功")
+
+    conn.close()
+    return redirect(url_for("classes"))
+
+# 课程管理
+@app.route("/courses")
+@login_required
+def courses():
+    conn = get_db_connection()
+    courses = conn.execute("SELECT * FROM courses ORDER BY code").fetchall()
+    conn.close()
+    return render_template("courses/index.html", courses=courses)
+
+# 创建课程
+@app.route("/courses/create", methods=["GET", "POST"])
+@login_required
+@admin_required
+def create_course():
+    if request.method == "POST":
+        code = request.form["code"]
+        name = request.form["name"]
+        description = request.form.get("description")
+        credits = request.form.get("credits")
+
+        conn = get_db_connection()
+        try:
+            conn.execute("INSERT INTO courses (code, name, description, credits) VALUES (?, ?, ?, ?)", 
+                        (code, name, description, credits))
+            conn.commit()
+            flash("课程创建成功")
+            return redirect(url_for("courses"))
+        except sqlite3.IntegrityError:
+            flash("课程代码已存在")
+        finally:
+            conn.close()
+
+    return render_template("courses/create.html")
+
+# 编辑课程
+@app.route("/courses/<int:course_id>/edit", methods=["GET", "POST"])
+@login_required
+@admin_required
+def edit_course(course_id):
+    conn = get_db_connection()
+    course = conn.execute("SELECT * FROM courses WHERE id = ?", (course_id,)).fetchone()
+
+    if request.method == "POST":
+        code = request.form["code"]
+        name = request.form["name"]
+        description = request.form.get("description")
+        credits = request.form.get("credits")
+
+        try:
+            conn.execute("UPDATE courses SET code = ?, name = ?, description = ?, credits = ? WHERE id = ?", 
+                        (code, name, description, credits, course_id))
+            conn.commit()
+            flash("课程信息更新成功")
+            return redirect(url_for("courses"))
+        except sqlite3.IntegrityError:
+            flash("课程代码已存在")
+        finally:
+            conn.close()
+
+    conn.close()
+    return render_template("courses/edit.html", course=course)
+
+# 删除课程
+@app.route("/courses/<int:course_id>/delete", methods=["POST"])
+@login_required
+@admin_required
+def delete_course(course_id):
+    conn = get_db_connection()
+
+    # 检查是否有学生选了该课程
+    enrollments = conn.execute("SELECT COUNT(*) as count FROM enrollments WHERE course_id = ?", 
+                             (course_id,)).fetchone()["count"]
+
+    if enrollments > 0:
+        flash(f"该课程已有 {enrollments} 名学生选课，无法删除")
+    else:
+        conn.execute("DELETE FROM courses WHERE id = ?", (course_id,))
+        conn.commit()
+        flash("课程删除成功")
+
+    conn.close()
+    return redirect(url_for("courses"))
+
+# 选课管理
+@app.route("/enrollments")
+@login_required
+def enrollments():
+    conn = get_db_connection()
+
+    if session.get("role") == "admin":
+        enrollments = conn.execute("""
+            SELECT e.*, s.name as student_name, s.student_id, c.name as course_name, c.code
+            FROM enrollments e
+            JOIN students s ON e.student_id = s.id
+            JOIN courses c ON e.course_id = c.id
+            ORDER BY e.semester DESC, e.created_at DESC
+        """).fetchall()
+    else:
+        # 普通用户只能看到自己创建的学生选课信息
+        enrollments = conn.execute("""
+            SELECT e.*, s.name as student_name, s.student_id, c.name as course_name, c.code
+            FROM enrollments e
+            JOIN students s ON e.student_id = s.id
+            JOIN courses c ON e.course_id = c.id
+            WHERE s.created_by = ?
+            ORDER BY e.semester DESC, e.created_at DESC
+        """, (session["user_id"],)).fetchall()
+
+    conn.close()
+    return render_template("enrollments/index.html", enrollments=enrollments)
+
+# 创建选课记录
+@app.route("/enrollments/create", methods=["GET", "POST"])
+@login_required
+def create_enrollment():
+    conn = get_db_connection()
+
+    if request.method == "POST":
+        student_id = request.form["student_id"]
+        course_id = request.form["course_id"]
+        semester = request.form["semester"]
+        grade = request.form.get("grade")
+
+        # 检查是否已存在相同的选课记录
+        existing = conn.execute("""
+            SELECT * FROM enrollments 
+            WHERE student_id = ? AND course_id = ? AND semester = ?
+        """, (student_id, course_id, semester)).fetchone()
+
+        if existing:
+            flash("该学生在此学期已选择此课程")
+        else:
+            conn.execute("""
+                INSERT INTO enrollments (student_id, course_id, semester, grade)
+                VALUES (?, ?, ?, ?)
+            """, (student_id, course_id, semester, grade))
+            conn.commit()
+            flash("选课记录创建成功")
+            return redirect(url_for("enrollments"))
+
+    # 获取学生和课程列表
+    if session.get("role") == "admin":
+        students = conn.execute("SELECT * FROM students ORDER BY name").fetchall()
+    else:
+        # 普通用户只能看到自己创建的学生
+        students = conn.execute("SELECT * FROM students WHERE created_by = ? ORDER BY name", 
+                               (session["user_id"],)).fetchall()
+
+    courses = conn.execute("SELECT * FROM courses ORDER BY code").fetchall()
+    conn.close()
+
+    return render_template("enrollments/create.html", students=students, courses=courses)
+
+# 编辑选课记录
+@app.route("/enrollments/<int:enrollment_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_enrollment(enrollment_id):
+    conn = get_db_connection()
+
+    # 获取选课记录
+    enrollment = conn.execute("""
+        SELECT e.*, s.name as student_name, s.student_id, c.name as course_name, c.code
+        FROM enrollments e
+        JOIN students s ON e.student_id = s.id
+        JOIN courses c ON e.course_id = c.id
+        WHERE e.id = ?
+    """, (enrollment_id,)).fetchone()
+
+    # 权限检查：普通用户只能编辑自己创建的学生选课记录
+    if session.get("role") != "admin":
+        student = conn.execute("SELECT created_by FROM students WHERE id = ?", 
+                              (enrollment["student_id"],)).fetchone()
+        if student["created_by"] != session["user_id"]:
+            flash("您没有权限编辑此选课记录")
+            return redirect(url_for("enrollments"))
+
+    if request.method == "POST":
+        semester = request.form["semester"]
+        grade = request.form.get("grade")
+
+        conn.execute("""
+            UPDATE enrollments SET semester = ?, grade = ? WHERE id = ?
+        """, (semester, grade, enrollment_id))
+
+        conn.commit()
+        flash("选课记录更新成功")
+        return redirect(url_for("enrollments"))
+
+    conn.close()
+    return render_template("enrollments/edit.html", enrollment=enrollment)
+
+# 删除选课记录
+@app.route("/enrollments/<int:enrollment_id>/delete", methods=["POST"])
+@login_required
+def delete_enrollment(enrollment_id):
+    conn = get_db_connection()
+
+    # 获取选课记录
+    enrollment = conn.execute("SELECT * FROM enrollments WHERE id = ?", (enrollment_id,)).fetchone()
+
+    # 权限检查：普通用户只能删除自己创建的学生选课记录
+    if session.get("role") != "admin":
+        student = conn.execute("SELECT created_by FROM students WHERE id = ?", 
+                              (enrollment["student_id"],)).fetchone()
+        if student["created_by"] != session["user_id"]:
+            flash("您没有权限删除此选课记录")
+            return redirect(url_for("enrollments"))
+
+    conn.execute("DELETE FROM enrollments WHERE id = ?", (enrollment_id,))
+    conn.commit()
+    conn.close()
+    flash("选课记录删除成功")
+    return redirect(url_for("enrollments"))
+
+# 学生成绩查看
+@app.route("/students/<int:student_id>/grades")
+@login_required
+def student_grades(student_id):
+    conn = get_db_connection()
+
+    # 获取学生信息
+    student = conn.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
+
+    # 权限检查：普通用户只能查看自己创建的学生成绩
+    if session.get("role") != "admin" and student["created_by"] != session["user_id"]:
+        flash("您没有权限查看此学生成绩")
+        return redirect(url_for("students"))
+
+    # 获取学生成绩
+    grades = conn.execute("""
+        SELECT e.*, c.name as course_name, c.code, c.credits
+        FROM enrollments e
+        JOIN courses c ON e.course_id = c.id
+        WHERE e.student_id = ?
+        ORDER BY e.semester DESC
+    """, (student_id,)).fetchall()
+
+    conn.close()
+    return render_template("students/grades.html", student=student, grades=grades)
+
+if __name__ == "__main__":
+    init_db()  # 初始化数据库
+    app.run(debug=True)

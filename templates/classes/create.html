@@ -1,0 +1,41 @@
+
+{% extends "base.html" %}
+
+{% block title %}添加班级 - 学生信息管理系统{% endblock %}
+
+{% block header %}添加班级{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">班级信息</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">班级名称</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="major_id" class="form-label">所属专业</label>
+                        <select class="form-select" id="major_id" name="major_id">
+                            <option value="">请选择专业</option>
+                            {% for major in majors %}
+                            <option value="{{ major.id }}">{{ major.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">班级描述</label>
+                        <textarea class="form-control" id="description" name="description" rows="4"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                    <a href="{{ url_for('classes') }}" class="btn btn-secondary">取消</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

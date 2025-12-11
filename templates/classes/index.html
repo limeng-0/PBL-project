@@ -1,0 +1,57 @@
+
+{% extends "base.html" %}
+
+{% block title %}班级管理 - 学生信息管理系统{% endblock %}
+
+{% block header %}班级管理{% endblock %}
+
+{% block actions %}
+{% if session.role == 'admin' %}
+<a href="{{ url_for('create_class') }}" class="btn btn-primary">添加班级</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">班级列表</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>班级名称</th>
+                        <th>所属专业</th>
+                        <th>描述</th>
+                        <th>创建时间</th>
+                        {% if session.role == 'admin' %}
+                        <th>操作</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for class in classes %}
+                    <tr>
+                        <td>{{ class.id }}</td>
+                        <td>{{ class.name }}</td>
+                        <td>{{ class.major_name or '未设置' }}</td>
+                        <td>{{ class.description or '无描述' }}</td>
+                        <td>{{ class.created_at }}</td>
+                        {% if session.role == 'admin' %}
+                        <td>
+                            <a href="{{ url_for('edit_class', class_id=class.id) }}" class="btn btn-sm btn-primary">编辑</a>
+                            <form action="{{ url_for('delete_class', class_id=class.id) }}" method="post" style="display: inline;" onsubmit="return confirm('确定要删除此班级吗？');">
+                                <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                            </form>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

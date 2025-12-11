@@ -1,0 +1,94 @@
+
+{% extends "base.html" %}
+
+{% block title %}学生成绩 - 学生信息管理系统{% endblock %}
+
+{% block header %}{{ student.name }}的成绩单{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">学生信息</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-borderless">
+                    <tr>
+                        <th>学号：</th>
+                        <td>{{ student.student_id }}</td>
+                    </tr>
+                    <tr>
+                        <th>姓名：</th>
+                        <td>{{ student.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>性别：</th>
+                        <td>{{ student.gender }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-borderless">
+                    <tr>
+                        <th>专业：</th>
+                        <td>{{ student.major_name or '未设置' }}</td>
+                    </tr>
+                    <tr>
+                        <th>班级：</th>
+                        <td>{{ student.class_name or '未设置' }}</td>
+                    </tr>
+                    <tr>
+                        <th>联系电话：</th>
+                        <td>{{ student.phone or '未设置' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">成绩记录</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>课程代码</th>
+                        <th>课程名称</th>
+                        <th>学分</th>
+                        <th>学期</th>
+                        <th>成绩</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for grade in grades %}
+                    <tr>
+                        <td>{{ grade.code }}</td>
+                        <td>{{ grade.course_name }}</td>
+                        <td>{{ grade.credits or '未设置' }}</td>
+                        <td>{{ grade.semester }}</td>
+                        <td>
+                            {% if grade.grade %}
+                                <span class="{% if grade.grade >= 90 %}text-success{% elif grade.grade >= 80 %}text-primary{% elif grade.grade >= 70 %}text-info{% elif grade.grade >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                                    {{ grade.grade }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">未录入</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{{ url_for('students') }}" class="btn btn-secondary">返回学生列表</a>
+</div>
+{% endblock %}

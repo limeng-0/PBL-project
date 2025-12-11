@@ -1,0 +1,59 @@
+
+{% extends "base.html" %}
+
+{% block title %}课程管理 - 学生信息管理系统{% endblock %}
+
+{% block header %}课程管理{% endblock %}
+
+{% block actions %}
+{% if session.role == 'admin' %}
+<a href="{{ url_for('create_course') }}" class="btn btn-primary">添加课程</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">课程列表</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>课程代码</th>
+                        <th>课程名称</th>
+                        <th>学分</th>
+                        <th>描述</th>
+                        <th>创建时间</th>
+                        {% if session.role == 'admin' %}
+                        <th>操作</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for course in courses %}
+                    <tr>
+                        <td>{{ course.id }}</td>
+                        <td>{{ course.code }}</td>
+                        <td>{{ course.name }}</td>
+                        <td>{{ course.credits or '未设置' }}</td>
+                        <td>{{ course.description or '无描述' }}</td>
+                        <td>{{ course.created_at }}</td>
+                        {% if session.role == 'admin' %}
+                        <td>
+                            <a href="{{ url_for('edit_course', course_id=course.id) }}" class="btn btn-sm btn-primary">编辑</a>
+                            <form action="{{ url_for('delete_course', course_id=course.id) }}" method="post" style="display: inline;" onsubmit="return confirm('确定要删除此课程吗？');">
+                                <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                            </form>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

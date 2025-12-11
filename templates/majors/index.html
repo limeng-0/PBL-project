@@ -1,0 +1,55 @@
+
+{% extends "base.html" %}
+
+{% block title %}专业管理 - 学生信息管理系统{% endblock %}
+
+{% block header %}专业管理{% endblock %}
+
+{% block actions %}
+{% if session.role == 'admin' %}
+<a href="{{ url_for('create_major') }}" class="btn btn-primary">添加专业</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">专业列表</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>专业名称</th>
+                        <th>描述</th>
+                        <th>创建时间</th>
+                        {% if session.role == 'admin' %}
+                        <th>操作</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for major in majors %}
+                    <tr>
+                        <td>{{ major.id }}</td>
+                        <td>{{ major.name }}</td>
+                        <td>{{ major.description or '无描述' }}</td>
+                        <td>{{ major.created_at }}</td>
+                        {% if session.role == 'admin' %}
+                        <td>
+                            <a href="{{ url_for('edit_major', major_id=major.id) }}" class="btn btn-sm btn-primary">编辑</a>
+                            <form action="{{ url_for('delete_major', major_id=major.id) }}" method="post" style="display: inline;" onsubmit="return confirm('确定要删除此专业吗？');">
+                                <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                            </form>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

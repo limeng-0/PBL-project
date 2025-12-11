@@ -1,0 +1,63 @@
+
+{% extends "base.html" %}
+
+{% block title %}选课管理 - 学生信息管理系统{% endblock %}
+
+{% block header %}选课管理{% endblock %}
+
+{% block actions %}
+<a href="{{ url_for('create_enrollment') }}" class="btn btn-primary">添加选课记录</a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">选课记录列表</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>学号</th>
+                        <th>学生姓名</th>
+                        <th>课程代码</th>
+                        <th>课程名称</th>
+                        <th>学期</th>
+                        <th>成绩</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enrollment in enrollments %}
+                    <tr>
+                        <td>{{ enrollment.id }}</td>
+                        <td>{{ enrollment.student_id }}</td>
+                        <td>{{ enrollment.student_name }}</td>
+                        <td>{{ enrollment.code }}</td>
+                        <td>{{ enrollment.course_name }}</td>
+                        <td>{{ enrollment.semester }}</td>
+                        <td>
+                            {% if enrollment.grade %}
+                                {{ enrollment.grade }}
+                            {% else %}
+                                <span class="text-muted">未录入</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ enrollment.created_at }}</td>
+                        <td>
+                            <a href="{{ url_for('edit_enrollment', enrollment_id=enrollment.id) }}" class="btn btn-sm btn-primary">编辑</a>
+                            <form action="{{ url_for('delete_enrollment', enrollment_id=enrollment.id) }}" method="post" style="display: inline;" onsubmit="return confirm('确定要删除此选课记录吗？');">
+                                <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+
+{% extends "base.html" %}
+
+{% block title %}添加选课记录 - 学生信息管理系统{% endblock %}
+
+{% block header %}添加选课记录{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">选课信息</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="student_id" class="form-label">学生</label>
+                        <select class="form-select" id="student_id" name="student_id" required>
+                            <option value="">请选择学生</option>
+                            {% for student in students %}
+                            <option value="{{ student.id }}">{{ student.student_id }} - {{ student.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="course_id" class="form-label">课程</label>
+                        <select class="form-select" id="course_id" name="course_id" required>
+                            <option value="">请选择课程</option>
+                            {% for course in courses %}
+                            <option value="{{ course.id }}">{{ course.code }} - {{ course.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="semester" class="form-label">学期</label>
+                        <input type="text" class="form-control" id="semester" name="semester" placeholder="例如：2023-2024学年第一学期" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="grade" class="form-label">成绩</label>
+                        <input type="number" class="form-control" id="grade" name="grade" min="0" max="100" step="0.1" placeholder="可留空，后续录入">
+                    </div>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                    <a href="{{ url_for('enrollments') }}" class="btn btn-secondary">取消</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

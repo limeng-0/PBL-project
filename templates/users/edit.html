@@ -1,0 +1,44 @@
+
+{% extends "base.html" %}
+
+{% block title %}编辑用户 - 学生信息管理系统{% endblock %}
+
+{% block header %}编辑用户{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">用户信息</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">用户名</label>
+                        <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">邮箱</label>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">密码</label>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="留空则不修改密码">
+                        <div class="form-text">留空表示不修改密码</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="role" class="form-label">角色</label>
+                        <select class="form-select" id="role" name="role" required>
+                            <option value="user" {% if user.role == 'user' %}selected{% endif %}>普通用户</option>
+                            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>管理员</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">保存更改</button>
+                    <a href="{{ url_for('users') }}" class="btn btn-secondary">取消</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
