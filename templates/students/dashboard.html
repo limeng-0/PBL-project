@@ -1,0 +1,136 @@
+
+{% extends "base.html" %}
+
+{% block title %}学生仪表盘 - 学生信息管理系统{% endblock %}
+
+{% block header %}学生仪表盘{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            我的学生
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ student_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            选课记录
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ enrollment_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-book-open fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            平均成绩
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ average_grade }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            待录入成绩
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pending_grades }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">学生信息管理系统</h6>
+            </div>
+            <div class="card-body">
+                <p>欢迎使用学生信息管理系统！作为普通用户，您可以：</p>
+                <ul>
+                    <li>管理您创建的学生信息</li>
+                    <li>为学生选择课程</li>
+                    <li>录入和管理学生成绩</li>
+                    <li>查看学生选课和成绩情况</li>
+                </ul>
+                <p>系统采用响应式设计，可在各种设备上使用。您只能管理自己创建的数据。</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">快速操作</h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="{{ url_for('create_student') }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">添加学生</h5>
+                        </div>
+                        <p class="mb-1">录入新的学生信息</p>
+                    </a>
+                    <a href="{{ url_for('students') }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">查看学生列表</h5>
+                        </div>
+                        <p class="mb-1">浏览和管理您的学生信息</p>
+                    </a>
+                    <a href="{{ url_for('create_enrollment') }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">学生选课</h5>
+                        </div>
+                        <p class="mb-1">为您的学生选择课程</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}

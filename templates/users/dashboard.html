@@ -1,9 +1,9 @@
 
 {% extends "base.html" %}
 
-{% block title %}仪表盘 - 学生信息管理系统{% endblock %}
+{% block title %}管理员仪表盘 - 学生信息管理系统{% endblock %}
 
-{% block header %}仪表盘{% endblock %}
+{% block header %}管理员仪表盘{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -81,22 +81,60 @@
 </div>
 
 <div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            用户总数
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ user_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-user-shield fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-secondary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
+                            选课记录
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ enrollment_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
     <div class="col-lg-6 mb-4">
         <div class="card shadow">
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">系统简介</h6>
             </div>
             <div class="card-body">
-                <p>欢迎使用学生信息管理系统！这是一个基于Flask和SQLite开发的学生信息管理平台，提供以下功能：</p>
+                <p>欢迎使用学生信息管理系统！作为管理员，您可以：</p>
                 <ul>
-                    <li>用户注册与登录</li>
-                    <li>学生信息管理</li>
-                    <li>专业与班级管理</li>
-                    <li>课程与选课管理</li>
-                    <li>成绩管理</li>
-                    <li>权限控制（管理员与普通用户）</li>
+                    <li>管理所有用户账户</li>
+                    <li>管理所有学生信息</li>
+                    <li>管理专业与班级</li>
+                    <li>管理课程与选课</li>
+                    <li>查看全局统计数据</li>
+                    <li>管理系统权限</li>
                 </ul>
-                <p>系统采用响应式设计，可在各种设备上使用。管理员拥有全部权限，普通用户只能管理自己创建的数据。</p>
+                <p>系统采用响应式设计，可在各种设备上使用。管理员拥有全部权限，可以管理所有数据。</p>
             </div>
         </div>
     </div>
@@ -108,26 +146,30 @@
             </div>
             <div class="card-body">
                 <div class="list-group">
-                    <a href="{{ url_for('create_student') }}" class="list-group-item list-group-item-action">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h5 class="mb-1">添加学生</h5>
-                        </div>
-                        <p class="mb-1">录入新的学生信息</p>
-                    </a>
-                    <a href="{{ url_for('students') }}" class="list-group-item list-group-item-action">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h5 class="mb-1">查看学生列表</h5>
-                        </div>
-                        <p class="mb-1">浏览和管理所有学生信息</p>
-                    </a>
-                    {% if session.role == 'admin' %}
                     <a href="{{ url_for('create_user') }}" class="list-group-item list-group-item-action">
                         <div class="d-flex w-100 justify-content-between">
                             <h5 class="mb-1">创建用户</h5>
                         </div>
                         <p class="mb-1">添加新的系统用户</p>
                     </a>
-                    {% endif %}
+                    <a href="{{ url_for('create_student') }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">添加学生</h5>
+                        </div>
+                        <p class="mb-1">录入新的学生信息</p>
+                    </a>
+                    <a href="{{ url_for('create_major') }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">添加专业</h5>
+                        </div>
+                        <p class="mb-1">创建新的专业</p>
+                    </a>
+                    <a href="{{ url_for('create_course') }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">添加课程</h5>
+                        </div>
+                        <p class="mb-1">创建新的课程</p>
+                    </a>
                 </div>
             </div>
         </div>
