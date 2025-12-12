@@ -29,6 +29,8 @@
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
             backdrop-filter: blur(4px);
             border: 1px solid rgba(255, 255, 255, 0.3);
+            overflow-y: auto; /* 添加垂直滚动条 */
+            max-height: 90vh; /* 限制容器高度 */
         }
 
         .register-title {
@@ -104,9 +106,8 @@
 <body>
     <div class="register-container w-100 m-auto">
         <form method="post">
-            <h2 class="register-title">学生信息管理系统</h2>
+            <h2 class="register-title">学生注册</h2>
             
-
             <!-- 消息闪现 -->
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
@@ -118,22 +119,58 @@
                 {% endif %}
             {% endwith %}
 
-            <!-- 用户名 -->
+            <!-- 学号 -->
             <div class="form-group">
-                <label for="username" class="form-label">用户名</label>
-                <input type="text" class="form-control" id="username" name="username" placeholder="请输入用户名" required>
-            </div>
-
-            <!-- 邮箱 -->
-            <div class="form-group">
-                <label for="email" class="form-label">邮箱</label>
-                <input type="email" class="form-control" id="email" name="email" placeholder="请输入邮箱" required>
+                <label for="student_id" class="form-label">学号 *</label>
+                <input type="text" class="form-control" id="student_id" name="student_id" placeholder="请输入学号" required>
             </div>
 
             <!-- 密码 -->
             <div class="form-group">
-                <label for="password" class="form-label">密码</label>
+                <label for="password" class="form-label">密码 *</label>
                 <input type="password" class="form-control" id="password" name="password" placeholder="请输入密码" required>
+            </div>
+
+            <!-- 确认密码 -->
+            <div class="form-group">
+                <label for="confirm_password" class="form-label">确认密码 *</label>
+                <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="请再次输入密码" required>
+            </div>
+
+            <!-- 姓名 -->
+            <div class="form-group">
+                <label for="name" class="form-label">姓名 *</label>
+                <input type="text" class="form-control" id="name" name="name" placeholder="请输入姓名" required>
+            </div>
+
+            <!-- 性别 -->
+            <div class="form-group">
+                <label for="gender" class="form-label">性别</label>
+                <select class="form-control" id="gender" name="gender">
+                    <option value="">请选择</option>
+                    <option value="male">男</option>
+                    <option value="female">女</option>
+                </select>
+            </div>
+
+            <!-- 专业 -->
+            <div class="form-group">
+                <label for="major" class="form-label">专业</label>
+                <input type="text" class="form-control" id="major" name="major" placeholder="请输入专业">
+            </div>
+
+            <!-- 年级 -->
+            <div class="form-group">
+                <label for="grade" class="form-label">年级</label>
+                <input type="text" class="form-control" id="grade" name="grade" placeholder="请输入年级">
+            </div>
+
+
+
+            <!-- 手机号 -->
+            <div class="form-group">
+                <label for="phone" class="form-label">手机号</label>
+                <input type="tel" class="form-control" id="phone" name="phone" placeholder="请输入手机号">
             </div>
 
             <!-- 注册按钮 -->
@@ -141,7 +178,7 @@
 
             <!-- 登录链接 居中对齐 -->
             <div class="login-link-container">
-                <a href="{{ url_for('login') }}" class="login-link">已有账号？返回登录</a>
+                <a href="{{ url_for('login') }}" class="login-link">已有账号？立即登录</a>
             </div>
         </form>
     </div>
