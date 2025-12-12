@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -39,7 +40,6 @@
             font-size: 1.5rem;
         }
 
-        /* 创建一个新的表单组样式 */
         .form-group {
             margin-bottom: 1.5rem;
             text-align: left;
@@ -104,8 +104,7 @@
 <body>
     <div class="register-container w-100 m-auto">
         <form method="post">
-            <h2 class="register-title">学生信息管理系统</h2>
-            
+            <h2 class="register-title">用户注册</h2>
 
             <!-- 消息闪现 -->
             {% with messages = get_flashed_messages() %}
@@ -120,20 +119,20 @@
 
             <!-- 用户名 -->
             <div class="form-group">
-                <label for="username" class="form-label">用户名</label>
+                <label for="username" class="form-label">用户名 *</label>
                 <input type="text" class="form-control" id="username" name="username" placeholder="请输入用户名" required>
-            </div>
-
-            <!-- 邮箱 -->
-            <div class="form-group">
-                <label for="email" class="form-label">邮箱</label>
-                <input type="email" class="form-control" id="email" name="email" placeholder="请输入邮箱" required>
             </div>
 
             <!-- 密码 -->
             <div class="form-group">
-                <label for="password" class="form-label">密码</label>
+                <label for="password" class="form-label">密码 *</label>
                 <input type="password" class="form-control" id="password" name="password" placeholder="请输入密码" required>
+            </div>
+
+            <!-- 邮箱 -->
+            <div class="form-group">
+                <label for="email" class="form-label">邮箱 *</label>
+                <input type="email" class="form-control" id="email" name="email" placeholder="请输入邮箱" required>
             </div>
 
             <!-- 注册按钮 -->
@@ -141,7 +140,7 @@
 
             <!-- 登录链接 居中对齐 -->
             <div class="login-link-container">
-                <a href="{{ url_for('login') }}" class="login-link">已有账号？返回登录</a>
+                <a href="{{ url_for('login') }}" class="login-link">已有账号？立即登录</a>
             </div>
         </form>
     </div>

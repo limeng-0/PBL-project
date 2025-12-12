@@ -132,7 +132,11 @@ def get_db_connection():
 @app.route("/")
 def index():
     if "user_id" in session:
-        return redirect(url_for("dashboard"))
+        # 根据用户角色重定向到对应的仪表盘
+        if session.get("role") == "admin":
+            return redirect(url_for("users_dashboard"))
+        else:
+            return redirect(url_for("students_dashboard"))
     return redirect(url_for("login"))
 
 # 登录页面
@@ -151,7 +155,11 @@ def login():
             session["username"] = user["username"]
             session["role"] = user["role"]
             flash("登录成功！")
-            return redirect(url_for("dashboard"))
+            # 根据用户角色直接重定向到对应的仪表盘
+            if user["role"] == "admin":
+                return redirect(url_for("users_dashboard"))
+            else:
+                return redirect(url_for("students_dashboard"))
         else:
             flash("用户名或密码错误")
 
@@ -197,21 +205,80 @@ def logout():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    conn = get_db_connection()
+    # 根据用户角色重定向到不同的仪表盘页面
+    if session.get("role") == "admin":
+        return redirect(url_for("users_dashboard"))
+    else:
+        return redirect(url_for("students_dashboard"))
 
-    # 获取统计信息
+# 学生仪表盘
+@app.route("/students/dashboard")
+@login_required
+def students_dashboard():
+    conn = get_db_connection()
+    
+    # 普通用户仪表盘数据
+    student_count = conn.execute("SELECT COUNT(*) as count FROM students WHERE created_by = ?", 
+                               (session["user_id"],)).fetchone()["count"]
+    
+    # 获取该用户创建的学生的选课记录数
+    enrollment_count = conn.execute("""
+        SELECT COUNT(*) as count 
+        FROM enrollments e
+        JOIN students s ON e.student_id = s.id
+        WHERE s.created_by = ?
+    """, (session["user_id"],)).fetchone()["count"]
+    
+    # 获取平均成绩
+    avg_grade = conn.execute("""
+        SELECT AVG(e.grade) as avg
+        FROM enrollments e
+        JOIN students s ON e.student_id = s.id
+        WHERE s.created_by = ? AND e.grade IS NOT NULL
+    """, (session["user_id"],)).fetchone()["avg"]
+    
+    average_grade = "{:.2f}".format(avg_grade) if avg_grade else "0.00"
+    
+    # 获取待录入成绩数
+    pending_grades = conn.execute("""
+        SELECT COUNT(*) as count 
+        FROM enrollments e
+        JOIN students s ON e.student_id = s.id
+        WHERE s.created_by = ? AND e.grade IS NULL
+    """, (session["user_id"],)).fetchone()["count"]
+    
+    conn.close()
+    
+    return render_template("students/dashboard.html",
+                          student_count=student_count,
+                          enrollment_count=enrollment_count,
+                          average_grade=average_grade,
+                          pending_grades=pending_grades)
+
+# 管理员仪表盘
+@app.route("/users/dashboard")
+@login_required
+@admin_required
+def users_dashboard():
+    conn = get_db_connection()
+    
+    # 管理员仪表盘数据
     student_count = conn.execute("SELECT COUNT(*) as count FROM students").fetchone()["count"]
     major_count = conn.execute("SELECT COUNT(*) as count FROM majors").fetchone()["count"]
     class_count = conn.execute("SELECT COUNT(*) as count FROM classes").fetchone()["count"]
     course_count = conn.execute("SELECT COUNT(*) as count FROM courses").fetchone()["count"]
-
+    user_count = conn.execute("SELECT COUNT(*) as count FROM users").fetchone()["count"]
+    enrollment_count = conn.execute("SELECT COUNT(*) as count FROM enrollments").fetchone()["count"]
+    
     conn.close()
-
-    return render_template("dashboard.html", 
+    
+    return render_template("users/dashboard.html",
                           student_count=student_count,
                           major_count=major_count,
                           class_count=class_count,
-                          course_count=course_count)
+                          course_count=course_count,
+                          user_count=user_count,
+                          enrollment_count=enrollment_count)
 
 # 用户管理 - 管理员专用
 @app.route("/users")
