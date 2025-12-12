@@ -5,75 +5,197 @@
 
 {% block header %}学生仪表盘{% endblock %}
 
+{% block breadcrumb %}{% endblock %}
+
 {% block content %}
+<style>
+    .dashboard-card {
+        transition: all 0.3s ease;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+
+    .card-icon {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        margin-right: 15px;
+    }
+
+    .card-icon i {
+        font-size: 24px;
+    }
+
+    .stat-card {
+        display: flex;
+        align-items: center;
+        padding: 20px;
+    }
+
+    .stat-info h3 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+    }
+
+    .stat-info p {
+        margin: 5px 0 0;
+        font-size: 14px;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .quick-action-card {
+        border-radius: 15px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .quick-action-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+
+    .quick-action-item {
+        border: none;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        transition: all 0.2s ease;
+    }
+
+    .quick-action-item:hover {
+        background-color: #f8f9fc;
+        transform: translateX(5px);
+    }
+
+    .quick-action-item i {
+        margin-right: 10px;
+        color: #4e73df;
+    }
+
+    .quick-action-item h5 {
+        color: #333;
+        font-weight: 600;
+    }
+
+    .quick-action-item p {
+        color: #6c757d;
+        font-size: 14px;
+        margin-bottom: 0;
+    }
+
+    .info-card {
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+
+    .info-card .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        font-weight: 600;
+    }
+
+    .info-card ul {
+        padding-left: 20px;
+    }
+
+    .info-card ul li {
+        margin-bottom: 10px;
+    }
+
+    .stat-primary .card-icon {
+        background-color: rgba(78, 115, 223, 0.1);
+        color: #4e73df;
+    }
+
+    .stat-success .card-icon {
+        background-color: rgba(28, 182, 131, 0.1);
+        color: #1cc88a;
+    }
+
+    .stat-info .card-icon {
+        background-color: rgba(54, 185, 204, 0.1);
+        color: #36b9cc;
+    }
+
+    .stat-warning .card-icon {
+        background-color: rgba(246, 194, 62, 0.1);
+        color: #f6c23e;
+    }
+
+    .stat-danger .card-icon {
+        background-color: rgba(234, 84, 85, 0.1);
+        color: #ea5455;
+    }
+
+    .stat-secondary .card-icon {
+        background-color: rgba(108, 117, 125, 0.1);
+        color: #6c757d;
+    }
+</style>
 <div class="row">
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-primary shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            我的学生
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ student_count }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-users fa-2x text-gray-300"></i>
-                    </div>
+        <div class="card dashboard-card shadow h-100 stat-primary">
+            <div class="card-body stat-card">
+                <div class="card-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ student_count }}</h3>
+                    <p>我的学生</p>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-info shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                            选课记录
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ enrollment_count }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-book-open fa-2x text-gray-300"></i>
-                    </div>
+        <div class="card dashboard-card shadow h-100 stat-info">
+            <div class="card-body stat-card">
+                <div class="card-icon">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ enrollment_count }}</h3>
+                    <p>选课记录</p>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-success shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                            平均成绩
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ average_grade }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-chart-line fa-2x text-gray-300"></i>
-                    </div>
+        <div class="card dashboard-card shadow h-100 stat-success">
+            <div class="card-body stat-card">
+                <div class="card-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ average_grade }}</h3>
+                    <p>平均成绩</p>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-warning shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                            待录入成绩
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pending_grades }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
-                    </div>
+        <div class="card dashboard-card shadow h-100 stat-warning">
+            <div class="card-body stat-card">
+                <div class="card-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ pending_grades }}</h3>
+                    <p>待录入成绩</p>
                 </div>
             </div>
         </div>
@@ -82,9 +204,9 @@
 
 <div class="row">
     <div class="col-lg-6 mb-4">
-        <div class="card shadow">
+        <div class="card info-card shadow">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">学生信息管理系统</h6>
+                <h6 class="m-0 font-weight-bold">学生信息管理系统</h6>
             </div>
             <div class="card-body">
                 <p>欢迎使用学生信息管理系统！作为普通用户，您可以：</p>
@@ -100,29 +222,38 @@
     </div>
 
     <div class="col-lg-6 mb-4">
-        <div class="card shadow">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">快速操作</h6>
+        <div class="card quick-action-card shadow">
+            <div class="card-header py-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; font-weight: 600;">
+                <h6 class="m-0">快速操作</h6>
             </div>
             <div class="card-body">
                 <div class="list-group">
-                    <a href="{{ url_for('create_student') }}" class="list-group-item list-group-item-action">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h5 class="mb-1">添加学生</h5>
+                    <a href="{{ url_for('create_student') }}" class="list-group-item list-group-item-action quick-action-item">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-plus fa-lg mr-3"></i>
+                            <div>
+                                <h5 class="mb-1">添加学生</h5>
+                                <p class="mb-0">录入新的学生信息</p>
+                            </div>
                         </div>
-                        <p class="mb-1">录入新的学生信息</p>
                     </a>
-                    <a href="{{ url_for('students') }}" class="list-group-item list-group-item-action">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h5 class="mb-1">查看学生列表</h5>
+                    <a href="{{ url_for('students') }}" class="list-group-item list-group-item-action quick-action-item">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-list fa-lg mr-3"></i>
+                            <div>
+                                <h5 class="mb-1">查看学生列表</h5>
+                                <p class="mb-0">浏览和管理您的学生信息</p>
+                            </div>
                         </div>
-                        <p class="mb-1">浏览和管理您的学生信息</p>
                     </a>
-                    <a href="{{ url_for('create_enrollment') }}" class="list-group-item list-group-item-action">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h5 class="mb-1">学生选课</h5>
+                    <a href="{{ url_for('create_enrollment') }}" class="list-group-item list-group-item-action quick-action-item">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-book-reader fa-lg mr-3"></i>
+                            <div>
+                                <h5 class="mb-1">学生选课</h5>
+                                <p class="mb-0">为您的学生选择课程</p>
+                            </div>
                         </div>
-                        <p class="mb-1">为您的学生选择课程</p>
                     </a>
                 </div>
             </div>
@@ -132,5 +263,5 @@
 {% endblock %}
 
 {% block scripts %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<!-- Font Awesome已在base.html中引入 -->
 {% endblock %}
