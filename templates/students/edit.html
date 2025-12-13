@@ -17,7 +17,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="student_id" class="form-label">学号</label>
-                            <input type="text" class="form-control" id="student_id" name="student_id" value="{{ student.student_id }}" required>
+                            <input type="text" class="form-control" id="student_id" name="student_id" value="{{ student.student_id }}" readonly onclick="alert('学号字段不能修改'); this.blur(); return false;">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="name" class="form-label">姓名</label>

@@ -456,7 +456,24 @@ def create_student():
             flash("学生信息创建成功")
             return redirect(url_for("students"))
         except sqlite3.IntegrityError:
-            flash("学号已存在")
+            # 获取专业和班级列表
+            majors = conn.execute("SELECT * FROM majors ORDER BY name").fetchall()
+            classes = conn.execute("SELECT * FROM classes ORDER BY name").fetchall()
+            # 返回表单数据和错误信息
+            return render_template("students/create.html", 
+                                  majors=majors, 
+                                  classes=classes,
+                                  student_id=student_id,
+                                  name=name,
+                                  gender=gender,
+                                  birth_date=birth_date,
+                                  address=address,
+                                  phone=phone,
+                                  email=email,
+                                  major_id=major_id,
+                                  class_id=class_id,
+                                  enrollment_date=enrollment_date,
+                                  error="该学号已存在，请使用其他学号")
         finally:
             conn.close()
 

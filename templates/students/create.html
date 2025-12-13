@@ -13,15 +13,21 @@
                 <h5 class="card-title mb-0">学生信息</h5>
             </div>
             <div class="card-body">
+                {% if error %}
+                <div class="alert alert-danger mt-2 mb-3" id="error-message">
+                    {{ error }}
+                </div>
+                {% endif %}
                 <form method="post">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="student_id" class="form-label">学号</label>
-                            <input type="text" class="form-control" id="student_id" name="student_id" required>
+                            <input type="text" class="form-control" id="student_id" name="student_id" value="{{ student_id or '' }}" required>
+                            <div id="student_id_error" class="form-text text-danger" style="display: none;">该学号已存在</div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="name" class="form-label">姓名</label>
-                            <input type="text" class="form-control" id="name" name="name" required>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ name or '' }}" required>
                         </div>
                     </div>
 
@@ -30,24 +36,24 @@
                             <label for="gender" class="form-label">性别</label>
                             <select class="form-select" id="gender" name="gender" required>
                                 <option value="">请选择</option>
-                                <option value="男">男</option>
-                                <option value="女">女</option>
+                                <option value="男" {% if gender == '男' %}selected{% endif %}>男</option>
+                                <option value="女" {% if gender == '女' %}selected{% endif %}>女</option>
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="birth_date" class="form-label">出生日期</label>
-                            <input type="date" class="form-control" id="birth_date" name="birth_date">
+                            <input type="date" class="form-control" id="birth_date" name="birth_date" value="{{ birth_date or '' }}">
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="phone" class="form-label">联系电话</label>
-                            <input type="tel" class="form-control" id="phone" name="phone">
+                            <input type="tel" class="form-control" id="phone" name="phone" value="{{ phone or '' }}">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="email" class="form-label">电子邮箱</label>
-                            <input type="email" class="form-control" id="email" name="email">
+                            <input type="email" class="form-control" id="email" name="email" value="{{ email or '' }}">
                         </div>
                     </div>
 
@@ -57,7 +63,7 @@
                             <select class="form-select" id="major_id" name="major_id">
                                 <option value="">请选择</option>
                                 {% for major in majors %}
-                                <option value="{{ major.id }}">{{ major.name }}</option>
+                                <option value="{{ major.id }}" {% if major_id == major.id|string %}selected{% endif %}>{{ major.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -66,7 +72,7 @@
                             <select class="form-select" id="class_id" name="class_id">
                                 <option value="">请选择</option>
                                 {% for class in classes %}
-                                <option value="{{ class.id }}">{{ class.name }}</option>
+                                <option value="{{ class.id }}" {% if class_id == class.id|string %}selected{% endif %}>{{ class.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -91,4 +97,18 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const studentIdInput = document.getElementById('student_id');
+    const errorMessage = document.getElementById('error-message');
+
+    // 当学号输入框内容改变时，隐藏错误提示
+    studentIdInput.addEventListener('input', function() {
+        if (errorMessage) {
+            errorMessage.style.display = 'none';
+        }
+    });
+});
+</script>
 {% endblock %}
