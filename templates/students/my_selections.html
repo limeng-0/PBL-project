@@ -1,0 +1,399 @@
+{% extends "student_base.html" %}
+
+{% block title %}我的选课 - 学生信息管理系统{% endblock %}
+
+{% block header %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">我的选课</h1>
+</div>
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">我的选课</li>
+{% endblock %}
+
+{% block content %}
+<!-- 学期选择 -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold">学期选择</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <select class="form-select" id="semester">
+                    <option value="2023-1" selected>2023-2024学年 第一学期</option>
+                    <option value="2023-2">2023-2024学年 第二学期</option>
+                    <option value="2022-1">2022-2023学年 第一学期</option>
+                    <option value="2022-2">2022-2023学年 第二学期</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-primary" id="filterBtn">
+                    <i class="fas fa-filter"></i> 筛选
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 选课统计 -->
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">已选课程</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">6</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-book fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">总学分</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">18</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-graduation-cap fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">必修课</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">4</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">选修课</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">2</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-star fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 课程表 -->
+<div class="row">
+    <div class="col-xl-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold">课程表</h6>
+                <div>
+                    <button class="btn btn-sm btn-outline-primary mr-2" id="printBtn">
+                        <i class="fas fa-print"></i> 打印
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" id="exportBtn">
+                        <i class="fas fa-download"></i> 导出
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>时间</th>
+                                <th>周一</th>
+                                <th>周二</th>
+                                <th>周三</th>
+                                <th>周四</th>
+                                <th>周五</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>8:00-9:40</td>
+                                <td>
+                                    <div class="course-block">
+                                        <strong>数据结构</strong><br>
+                                        <small>A101 | 张教授</small>
+                                    </div>
+                                </td>
+                                <td></td>
+                                <td>
+                                    <div class="course-block">
+                                        <strong>操作系统</strong><br>
+                                        <small>B205 | 李教授</small>
+                                    </div>
+                                </td>
+                                <td></td>
+                                <td>
+                                    <div class="course-block">
+                                        <strong>计算机网络</strong><br>
+                                        <small>C302 | 王教授</small>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>10:00-11:40</td>
+                                <td></td>
+                                <td>
+                                    <div class="course-block">
+                                        <strong>数据结构</strong><br>
+                                        <small>A101 | 张教授</small>
+                                    </div>
+                                </td>
+                                <td></td>
+                                <td>
+                                    <div class="course-block">
+                                        <strong>操作系统</strong><br>
+                                        <small>B205 | 李教授</small>
+                                    </div>
+                                </td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>14:00-15:40</td>
+                                <td>
+                                    <div class="course-block">
+                                        <strong>英语</strong><br>
+                                        <small>D401 | 刘教授</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="course-block">
+                                        <strong>计算机网络</strong><br>
+                                        <small>C302 | 王教授</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="course-block">
+                                        <strong>英语</strong><br>
+                                        <small>D401 | 刘教授</small>
+                                    </div>
+                                </td>
+                                <td></td>
+                                <td>
+                                    <div class="course-block">
+                                        <strong>体育</strong><br>
+                                        <small>操场 | 陈教授</small>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>16:00-17:40</td>
+                                <td></td>
+                                <td></td>
+                                <td>
+                                    <div class="course-block">
+                                        <strong>数据库原理</strong><br>
+                                        <small>E303 | 赵教授</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="course-block">
+                                        <strong>数据库原理</strong><br>
+                                        <small>E303 | 赵教授</small>
+                                    </div>
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 课程列表 -->
+<div class="row">
+    <div class="col-xl-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold">已选课程列表</h6>
+                <a href="{{ url_for('browse_courses') }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus"></i> 添加课程
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>课程代码</th>
+                                <th>课程名称</th>
+                                <th>教师</th>
+                                <th>学分</th>
+                                <th>类型</th>
+                                <th>上课时间</th>
+                                <th>上课地点</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>CS101</td>
+                                <td>数据结构</td>
+                                <td>张教授</td>
+                                <td>3</td>
+                                <td><span class="badge bg-primary">必修</span></td>
+                                <td>周一 8:00-9:40, 周二 10:00-11:40</td>
+                                <td>A101</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info">
+                                        <i class="fas fa-info-circle"></i> 详情
+                                    </button>
+                                    <button class="btn btn-sm btn-danger">
+                                        <i class="fas fa-times"></i> 退课
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CS102</td>
+                                <td>操作系统</td>
+                                <td>李教授</td>
+                                <td>3</td>
+                                <td><span class="badge bg-primary">必修</span></td>
+                                <td>周三 8:00-9:40, 周四 10:00-11:40</td>
+                                <td>B205</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info">
+                                        <i class="fas fa-info-circle"></i> 详情
+                                    </button>
+                                    <button class="btn btn-sm btn-danger">
+                                        <i class="fas fa-times"></i> 退课
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CS103</td>
+                                <td>计算机网络</td>
+                                <td>王教授</td>
+                                <td>3</td>
+                                <td><span class="badge bg-primary">必修</span></td>
+                                <td>周五 8:00-9:40, 周二 14:00-15:40</td>
+                                <td>C302</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info">
+                                        <i class="fas fa-info-circle"></i> 详情
+                                    </button>
+                                    <button class="btn btn-sm btn-danger">
+                                        <i class="fas fa-times"></i> 退课
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CS104</td>
+                                <td>数据库原理</td>
+                                <td>赵教授</td>
+                                <td>3</td>
+                                <td><span class="badge bg-primary">必修</span></td>
+                                <td>周三 16:00-17:40, 周四 16:00-17:40</td>
+                                <td>E303</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info">
+                                        <i class="fas fa-info-circle"></i> 详情
+                                    </button>
+                                    <button class="btn btn-sm btn-danger">
+                                        <i class="fas fa-times"></i> 退课
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>ENG101</td>
+                                <td>英语</td>
+                                <td>刘教授</td>
+                                <td>3</td>
+                                <td><span class="badge bg-success">选修</span></td>
+                                <td>周一 14:00-15:40, 周三 14:00-15:40</td>
+                                <td>D401</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info">
+                                        <i class="fas fa-info-circle"></i> 详情
+                                    </button>
+                                    <button class="btn btn-sm btn-danger">
+                                        <i class="fas fa-times"></i> 退课
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>PE101</td>
+                                <td>体育</td>
+                                <td>陈教授</td>
+                                <td>3</td>
+                                <td><span class="badge bg-success">选修</span></td>
+                                <td>周五 14:00-15:40</td>
+                                <td>操场</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info">
+                                        <i class="fas fa-info-circle"></i> 详情
+                                    </button>
+                                    <button class="btn btn-sm btn-danger">
+                                        <i class="fas fa-times"></i> 退课
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .course-block {
+        background-color: #f8f9fc;
+        border-radius: 5px;
+        padding: 5px;
+        margin-bottom: 5px;
+        border-left: 3px solid #4e73df;
+    }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 打印课程表
+    document.getElementById('printBtn').addEventListener('click', function() {
+        window.print();
+    });
+
+    // 导出课程表
+    document.getElementById('exportBtn').addEventListener('click', function() {
+        // 这里可以添加导出逻辑
+        alert('导出功能开发中...');
+    });
+
+    // 筛选学期
+    document.getElementById('filterBtn').addEventListener('click', function() {
+        const semester = document.getElementById('semester').value;
+        // 这里可以添加筛选逻辑
+        alert('已切换到: ' + semester);
+    });
+</script>
+{% endblock %}

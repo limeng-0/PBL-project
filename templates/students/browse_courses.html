@@ -1,0 +1,287 @@
+{% extends "student_base.html" %}
+
+{% block title %}浏览课程 - 学生信息管理系统{% endblock %}
+
+{% block header %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">浏览课程</h1>
+</div>
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">浏览课程</li>
+{% endblock %}
+
+{% block content %}
+<!-- 搜索和筛选 -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold">搜索和筛选</h6>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('browse_courses') }}">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="search" class="form-label">搜索课程</label>
+                    <input type="text" class="form-control" id="search" name="search" placeholder="输入课程名称或教师姓名" value="{{ request.args.get('search', '') }}">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="department" class="form-label">院系</label>
+                    <select class="form-select" id="department" name="department">
+                        <option value="">全部院系</option>
+                        <option value="cs" {% if request.args.get('department') == 'cs' %}selected{% endif %}>计算机学院</option>
+                        <option value="math" {% if request.args.get('department') == 'math' %}selected{% endif %}>数学学院</option>
+                        <option value="physics" {% if request.args.get('department') == 'physics' %}selected{% endif %}>物理学院</option>
+                        <option value="chemistry" {% if request.args.get('department') == 'chemistry' %}selected{% endif %}>化学学院</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="credit" class="form-label">学分</label>
+                    <select class="form-select" id="credit" name="credit">
+                        <option value="">全部学分</option>
+                        <option value="1" {% if request.args.get('credit') == '1' %}selected{% endif %}>1学分</option>
+                        <option value="2" {% if request.args.get('credit') == '2' %}selected{% endif %}>2学分</option>
+                        <option value="3" {% if request.args.get('credit') == '3' %}selected{% endif %}>3学分</option>
+                        <option value="4" {% if request.args.get('credit') == '4' %}selected{% endif %}>4学分</option>
+                    </select>
+                </div>
+                <div class="col-md-2 mb-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> 搜索
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 课程列表 -->
+<div class="row">
+    <div class="col-xl-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold">可选课程</h6>
+                <div class="dropdown no-arrow">
+                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                        <a class="dropdown-item" href="#">按学分排序</a>
+                        <a class="dropdown-item" href="#">按教师排序</a>
+                        <a class="dropdown-item" href="#">按时间排序</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>课程代码</th>
+                                <th>课程名称</th>
+                                <th>教师</th>
+                                <th>院系</th>
+                                <th>学分</th>
+                                <th>上课时间</th>
+                                <th>上课地点</th>
+                                <th>已选/人数</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>CS101</td>
+                                <td>数据结构</td>
+                                <td>张教授</td>
+                                <td>计算机学院</td>
+                                <td>3</td>
+                                <td>周一 8:00-9:40</td>
+                                <td>A101</td>
+                                <td>45/50</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#courseDetailModal1">
+                                        <i class="fas fa-info-circle"></i> 详情
+                                    </button>
+                                    <button class="btn btn-sm btn-success">
+                                        <i class="fas fa-plus"></i> 选课
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CS102</td>
+                                <td>操作系统</td>
+                                <td>李教授</td>
+                                <td>计算机学院</td>
+                                <td>3</td>
+                                <td>周三 8:00-9:40</td>
+                                <td>B205</td>
+                                <td>38/40</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#courseDetailModal2">
+                                        <i class="fas fa-info-circle"></i> 详情
+                                    </button>
+                                    <button class="btn btn-sm btn-success">
+                                        <i class="fas fa-plus"></i> 选课
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CS103</td>
+                                <td>计算机网络</td>
+                                <td>王教授</td>
+                                <td>计算机学院</td>
+                                <td>3</td>
+                                <td>周五 8:00-9:40</td>
+                                <td>C302</td>
+                                <td>42/50</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#courseDetailModal3">
+                                        <i class="fas fa-info-circle"></i> 详情
+                                    </button>
+                                    <button class="btn btn-sm btn-success">
+                                        <i class="fas fa-plus"></i> 选课
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CS104</td>
+                                <td>数据库原理</td>
+                                <td>赵教授</td>
+                                <td>计算机学院</td>
+                                <td>3</td>
+                                <td>周三 16:00-17:40</td>
+                                <td>E303</td>
+                                <td>35/40</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#courseDetailModal4">
+                                        <i class="fas fa-info-circle"></i> 详情
+                                    </button>
+                                    <button class="btn btn-sm btn-success">
+                                        <i class="fas fa-plus"></i> 选课
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>MATH101</td>
+                                <td>高等数学</td>
+                                <td>钱教授</td>
+                                <td>数学学院</td>
+                                <td>4</td>
+                                <td>周二 10:00-11:40</td>
+                                <td>D401</td>
+                                <td>48/60</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#courseDetailModal5">
+                                        <i class="fas fa-info-circle"></i> 详情
+                                    </button>
+                                    <button class="btn btn-sm btn-success">
+                                        <i class="fas fa-plus"></i> 选课
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 分页 -->
+<div class="row justify-content-center">
+    <nav aria-label="Page navigation">
+        <ul class="pagination">
+            <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">上一页</a>
+            </li>
+            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+            <li class="page-item"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <li class="page-item">
+                <a class="page-link" href="#">下一页</a>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<!-- 课程详情模态框 -->
+<div class="modal fade" id="courseDetailModal1" tabindex="-1" aria-labelledby="courseDetailModalLabel1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="courseDetailModalLabel1">课程详情 - 数据结构</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>基本信息</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td style="width: 120px;">课程代码</td>
+                                <td>CS101</td>
+                            </tr>
+                            <tr>
+                                <td>课程名称</td>
+                                <td>数据结构</td>
+                            </tr>
+                            <tr>
+                                <td>授课教师</td>
+                                <td>张教授</td>
+                            </tr>
+                            <tr>
+                                <td>所属院系</td>
+                                <td>计算机学院</td>
+                            </tr>
+                            <tr>
+                                <td>学分</td>
+                                <td>3</td>
+                            </tr>
+                            <tr>
+                                <td>上课时间</td>
+                                <td>周一 8:00-9:40</td>
+                            </tr>
+                            <tr>
+                                <td>上课地点</td>
+                                <td>A101</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>课程简介</h6>
+                        <p>本课程主要介绍常用数据结构的基本概念、逻辑结构、存储结构及基本运算，包括线性表、栈、队列、串、数组、树、图等基本类型的数据结构，以及查找和排序的各种方法。通过本课程的学习，学生应能掌握数据结构的基本理论和基本方法，具备分析问题和解决问题的能力，为后续课程的学习打下坚实的基础。</p>
+
+                        <h6>先修课程</h6>
+                        <p>程序设计基础、离散数学</p>
+
+                        <h6>教材</h6>
+                        <p>《数据结构（C语言版）》- 严蔚敏、吴伟民</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary">选课</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 其他课程详情模态框省略，类似结构 -->
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 选课确认
+    document.querySelectorAll('.btn-success').forEach(button => {
+        button.addEventListener('click', function() {
+            if (confirm('确定要选择这门课程吗？')) {
+                // 这里可以添加选课逻辑，比如发送AJAX请求到服务器
+                alert('选课成功！');
+                // 可以在这里更新页面状态
+            }
+        });
+    });
+</script>
+{% endblock %}

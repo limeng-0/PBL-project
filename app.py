@@ -211,6 +211,50 @@ def dashboard():
     else:
         return redirect(url_for("students_dashboard"))
 
+# 学生个人信息
+@app.route("/my_profile")
+@login_required
+def my_profile():
+    return render_template("students/profile.html")
+
+# 修改密码
+@app.route("/change_password", methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        # 处理修改密码逻辑
+        old_password = request.form.get('old_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        # 这里应该验证旧密码是否正确，并更新密码
+        # 示例代码，实际应用中应该有更严格的验证
+        if new_password != confirm_password:
+            flash('新密码和确认密码不匹配', 'danger')
+        else:
+            flash('密码已成功修改', 'success')
+            return redirect(url_for('my_profile'))
+
+    return render_template("change_password.html")
+
+# 浏览课程
+@app.route("/browse_courses")
+@login_required
+def browse_courses():
+    return render_template("students/browse_courses.html")
+
+# 我的选课
+@app.route("/my_selections")
+@login_required
+def my_selections():
+    return render_template("students/my_selections.html")
+
+# 我的成绩
+@app.route("/my_grades")
+@login_required
+def my_grades():
+    return render_template("students/my_grades.html")
+
 # 学生仪表盘
 @app.route("/students/dashboard")
 @login_required

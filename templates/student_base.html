@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}学生信息管理系统{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-width: 250px;
+            --sidebar-bg-color: #4e73df;
+            --sidebar-text-color: #fff;
+            --sidebar-active-color: #2e59d9;
+            --sidebar-hover-color: rgba(255, 255, 255, 0.15);
+            --header-height: 60px;
+        }
+
+        body {
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size: 0.9rem;
+            color: #5a5c69;
+            background-color: #f8f9fc;
+            min-height: 100vh;
+        }
+
+        /* 顶部导航栏 */
+        .topbar {
+            height: var(--header-height);
+            background-color: #fff;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            z-index: 1030;
+        }
+
+        .topbar .navbar-brand {
+            color: #4e73df;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .topbar .nav-item .nav-link {
+            color: #5a5c69;
+            font-weight: 500;
+        }
+
+        .topbar .nav-item .nav-link:hover {
+            color: #4e73df;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            height: 100vh;
+            background: linear-gradient(180deg, #4e73df 0%, #224abe 100%);
+            padding-top: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 100;
+            width: 250px;
+        }
+
+        .sidebar .nav-section-title {
+            color: #fff;
+            font-size: 16px;
+            font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
+            letter-spacing: 0px;
+            margin: 20px 0 10px 20px;
+            font-weight: 600;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            margin-left: 10px;
+            margin-right: 10px;
+        }
+
+        .sidebar .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .sidebar .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* 主内容区域 */
+        .content {
+            padding: 20px;
+        }
+
+        /* 顶部导航栏 */
+        .top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e3e6f0;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #5a5c69;
+            margin-bottom: 5px;
+        }
+
+        .breadcrumb-container {
+            font-size: 14px;
+        }
+
+        .breadcrumb-container a {
+            color: #858796;
+            text-decoration: none;
+        }
+
+        .breadcrumb-container a:hover {
+            color: #5a5c69;
+        }
+
+        /* 卡片样式 */
+        .card {
+            border: none;
+            border-radius: 0.35rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background-color: #f8f9fc;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 1rem 1.25rem;
+            font-weight: 600;
+        }
+
+        /* 边框左侧样式 */
+        .border-left-primary {
+            border-left: 0.25rem solid #4e73df !important;
+        }
+
+        .border-left-success {
+            border-left: 0.25rem solid #1cc88a !important;
+        }
+
+        .border-left-info {
+            border-left: 0.25rem solid #36b9cc !important;
+        }
+
+        .border-left-warning {
+            border-left: 0.25rem solid #f6c23e !important;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .content-wrapper {
+                margin-left: 0;
+            }
+        }
+
+        /* 面包屑导航 */
+        .breadcrumb {
+            background-color: transparent;
+            padding: 0;
+            margin-bottom: 1rem;
+        }
+
+        .breadcrumb-item + .breadcrumb-item::before {
+            content: ">";
+            color: #858796;
+        }
+
+        /* 表格样式 */
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table th {
+            border-top: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #5a5c69;
+            background-color: #f8f9fc;
+        }
+
+        /* 按钮样式 */
+        .btn-primary {
+            background-color: #4e73df;
+            border-color: #4e73df;
+        }
+
+        .btn-primary:hover {
+            background-color: #2e59d9;
+            border-color: #2653d4;
+        }
+
+        /* 分页样式 */
+        .pagination .page-link {
+            color: #4e73df;
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: #4e73df;
+            border-color: #4e73df;
+        }
+
+        /* 表单样式 */
+        .form-control:focus {
+            border-color: #bac8f3;
+            box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+        }
+
+        /* 模态框样式 */
+        .modal-header {
+            background-color: #4e73df;
+            color: white;
+        }
+
+        .modal-header .btn-close {
+            color: white;
+            opacity: 0.8;
+        }
+
+        .modal-header .btn-close:hover {
+            opacity: 1;
+        }
+
+        /* 课程块样式 */
+        .course-block {
+            padding: 0.5rem;
+            background-color: #f8f9fc;
+            border-radius: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+
+        /* 图表区域 */
+        .chart-area {
+            position: relative;
+            height: 20rem;
+            width: 100%;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container-fluid">
+            <button class="navbar-toggler d-md-none" type="button" id="sidebarToggle">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <a class="navbar-brand" href="{{ url_for('students_dashboard') }}">
+                学生信息管理系统
+            </a>
+            <div class="navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-2"></i>{{ session.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('my_profile') }}">个人资料</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('change_password') }}">修改密码</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">退出登录</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 侧边栏 -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <div class="nav-section">
+                        <div class="nav-section-title">学生信息管理系统</div>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint in ['dashboard', 'students_dashboard'] %}active{% endif %}" href="{{ url_for('students_dashboard') }}">
+                                    <i class="fas fa-home"></i>
+                                    首页
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="nav-section">
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'my_profile' %}active{% endif %}" href="{{ url_for('my_profile') }}">
+                                    <i class="fas fa-user-circle"></i>
+                                    个人信息
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'browse_courses' %}active{% endif %}" href="{{ url_for('browse_courses') }}">
+                                    <i class="fas fa-search"></i>
+                                    浏览课程
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'my_selections' %}active{% endif %}" href="{{ url_for('my_selections') }}">
+                                    <i class="fas fa-list-alt"></i>
+                                    我的选课
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'my_grades' %}active{% endif %}" href="{{ url_for('my_grades') }}">
+                                    <i class="fas fa-graduation-cap"></i>
+                                    我的成绩
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div><p></p></div>
+
+                    <div class="nav-section">
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link logout-link" href="{{ url_for('logout') }}">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    退出登录
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- 主要内容区域 -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 content">
+                <!-- 顶部导航栏 -->
+                <div class="top-header">
+                    <div>
+                        <h1 class="page-title">{% block header %}{% endblock %}</h1>
+                        <div class="breadcrumb-container mt-1">
+                            <a href="{{ url_for('students_dashboard') }}">首页</a>
+                            {% block breadcrumb %}{% endblock %}
+                        </div>
+                    </div>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            {% block actions %}{% endblock %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 页面内容 -->
+                <div class="container-fluid">
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- 侧边栏切换脚本 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggle = document.getElementById('sidebarToggleTop');
+            const sidebar = document.querySelector('.sidebar');
+
+            if (sidebarToggle && sidebar) {
+                sidebarToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('show');
+                });
+            }
+        });
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
