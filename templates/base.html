@@ -10,14 +10,18 @@
         /* 原有样式 */
         .sidebar {
             height: 100vh;
-            background: linear-gradient(180deg, #4e73df 0%, #224abe 100%);
-            padding-top: 20px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-            position: relative;
-            z-index: 100;
+            background-color: white;
+            padding-top: 25px;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+            position: fixed;
+            top: 60px;
+            left: 0;
+            z-index: 1000;
+            overflow-y: auto;
+            border-right: 1px solid #e9ecef;
         }
         .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.8);
+            color: #495057;
             padding: 12px 20px;
             border-radius: 8px;
             margin-bottom: 5px;
@@ -33,20 +37,20 @@
         }
         
         .sidebar .nav-link:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: white;
+            background-color: #f8f9fa;
+            color: #3f5efb;
             transform: translateX(5px);
         }
         
         .sidebar .nav-link.active {
-            background-color: rgba(255, 255, 255, 0.2);
-            color: white;
+            background-color: #e7f1ff;
+            color: #3f5efb;
             font-weight: 600;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 10px rgba(63, 94, 251, 0.1);
         }
         
         .sidebar .nav-link.active i {
-            color: white;
+            color: #3f5efb;
             opacity: 1;
             display: inline-block;
             margin-right: 10px;
@@ -222,16 +226,45 @@
         .mb-3 {
             margin-bottom: 1rem !important;
         }
+
+        /* 固定顶部边栏样式 */
+        .system-header {
+            background: linear-gradient(135deg, #3f5efb 0%, #4f29cd 100%);
+            box-shadow: 0 4px 20px rgba(79, 41, 205, 0.25);
+            padding: 15px 0;
+            z-index: 1002;
+            height: 60px;
+        }
+
+        .system-header .navbar-brand {
+            font-weight: 700;
+            font-size: 1.4rem;
+            color: white !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            letter-spacing: 0.5px;
+        }
     </style>
 </head>
 <body>
-    <div class="container-fluid">
+    <!-- 固定顶部边栏 -->
+    <nav class="navbar navbar-dark fixed-top system-header">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1 ms-4">学生信息管理系统</span>
+            <div class="d-flex">
+                <span class="text-white me-3">{{ session.username }}</span>
+                <a href="{{ url_for('logout') }}" class="text-white text-decoration-none">
+                    <i class="fas fa-sign-out-alt"></i> 退出
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid" style="padding-top: 60px;">
         <div class="row">
             <!-- 侧边栏 -->
             <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
                 <div class="position-sticky pt-3">
                     <div class="nav-section">
-                        <div class="nav-section-title">学生信息管理系统</div>
                         <ul class="nav flex-column">
                             <li class="nav-item">
                                 <a class="nav-link {% if request.endpoint in ['dashboard', 'users_dashboard'] %}active{% endif %}" href="{{ url_for('dashboard') }}">
@@ -310,7 +343,7 @@
             </nav>
 
             <!-- 主要内容区域 -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 content">
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 content" style="margin-left: 250px; padding-top: 20px;">
                 <!-- 顶部导航栏 -->
                 <div class="top-header">
                     <div>
