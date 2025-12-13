@@ -330,7 +330,7 @@ def users_dashboard():
 @admin_required
 def users():
     conn = get_db_connection()
-    users = conn.execute("SELECT * FROM users ORDER BY created_at DESC").fetchall()
+    users = conn.execute("SELECT * FROM users ORDER BY id ASC").fetchall()
     conn.close()
     return render_template("users/index.html", users=users)
 
@@ -412,7 +412,7 @@ def students():
             LEFT JOIN majors m ON s.major_id = m.id
             LEFT JOIN classes c ON s.class_id = c.id
             LEFT JOIN users u ON s.created_by = u.id
-            ORDER BY s.created_at DESC
+            ORDER BY s.id ASC
         """).fetchall()
     else:
         # 普通用户只能看到自己创建的学生信息
@@ -422,7 +422,7 @@ def students():
             LEFT JOIN majors m ON s.major_id = m.id
             LEFT JOIN classes c ON s.class_id = c.id
             WHERE s.created_by = ?
-            ORDER BY s.created_at DESC
+            ORDER BY s.id ASC
         """, (session["user_id"],)).fetchall()
 
     conn.close()
@@ -535,7 +535,7 @@ def delete_student(student_id):
 @login_required
 def majors():
     conn = get_db_connection()
-    majors = conn.execute("SELECT * FROM majors ORDER BY name").fetchall()
+    majors = conn.execute("SELECT * FROM majors ORDER BY id ASC").fetchall()
     conn.close()
     return render_template("majors/index.html", majors=majors)
 
@@ -617,7 +617,7 @@ def classes():
         SELECT c.*, m.name as major_name 
         FROM classes c
         LEFT JOIN majors m ON c.major_id = m.id
-        ORDER BY c.name
+        ORDER BY c.id ASC
     """).fetchall()
     conn.close()
     return render_template("classes/index.html", classes=classes)
@@ -712,7 +712,7 @@ def delete_class(class_id):
 @login_required
 def courses():
     conn = get_db_connection()
-    courses = conn.execute("SELECT * FROM courses ORDER BY code").fetchall()
+    courses = conn.execute("SELECT * FROM courses ORDER BY id ASC").fetchall()
     conn.close()
     return render_template("courses/index.html", courses=courses)
 
@@ -802,7 +802,7 @@ def enrollments():
             FROM enrollments e
             JOIN students s ON e.student_id = s.id
             JOIN courses c ON e.course_id = c.id
-            ORDER BY e.semester DESC, e.created_at DESC
+            ORDER BY e.id ASC
         """).fetchall()
     else:
         # 普通用户只能看到自己创建的学生选课信息
@@ -812,7 +812,7 @@ def enrollments():
             JOIN students s ON e.student_id = s.id
             JOIN courses c ON e.course_id = c.id
             WHERE s.created_by = ?
-            ORDER BY e.semester DESC, e.created_at DESC
+            ORDER BY e.id ASC
         """, (session["user_id"],)).fetchall()
 
     conn.close()
@@ -828,7 +828,6 @@ def create_enrollment():
         student_id = request.form["student_id"]
         course_id = request.form["course_id"]
         semester = request.form["semester"]
-        grade = request.form.get("grade")
 
         # 检查是否已存在相同的选课记录
         existing = conn.execute("""
@@ -840,9 +839,9 @@ def create_enrollment():
             flash("该学生在此学期已选择此课程")
         else:
             conn.execute("""
-                INSERT INTO enrollments (student_id, course_id, semester, grade)
-                VALUES (?, ?, ?, ?)
-            """, (student_id, course_id, semester, grade))
+                INSERT INTO enrollments (student_id, course_id, semester)
+                VALUES (?, ?, ?)
+            """, (student_id, course_id, semester))
             conn.commit()
             flash("选课记录创建成功")
             return redirect(url_for("enrollments"))
@@ -884,19 +883,24 @@ def edit_enrollment(enrollment_id):
             return redirect(url_for("enrollments"))
 
     if request.method == "POST":
+        student_id = request.form["student_id"]
+        course_id = request.form["course_id"]
         semester = request.form["semester"]
         grade = request.form.get("grade")
 
         conn.execute("""
-            UPDATE enrollments SET semester = ?, grade = ? WHERE id = ?
-        """, (semester, grade, enrollment_id))
+            UPDATE enrollments SET student_id = ?, course_id = ?, semester = ?, grade = ? WHERE id = ?
+        """, (student_id, course_id, semester, grade, enrollment_id))
 
         conn.commit()
         flash("选课记录更新成功")
         return redirect(url_for("enrollments"))
 
+    # 获取所有学生和课程列表
+    students = conn.execute("SELECT id, student_id, name FROM students").fetchall()
+    courses = conn.execute("SELECT id, code, name FROM courses").fetchall()
     conn.close()
-    return render_template("enrollments/edit.html", enrollment=enrollment)
+    return render_template("enrollments/edit.html", enrollment=enrollment, students=students, courses=courses)
 
 # 删除选课记录
 @app.route("/enrollments/<int:enrollment_id>/delete", methods=["POST"])
@@ -927,8 +931,14 @@ def delete_enrollment(enrollment_id):
 def student_grades(student_id):
     conn = get_db_connection()
 
-    # 获取学生信息
-    student = conn.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
+    # 获取学生信息（包括专业和班级名称）
+    student = conn.execute("""
+        SELECT s.*, m.name as major_name, c.name as class_name
+        FROM students s
+        LEFT JOIN majors m ON s.major_id = m.id
+        LEFT JOIN classes c ON s.class_id = c.id
+        WHERE s.id = ?
+    """, (student_id,)).fetchone()
 
     # 权限检查：普通用户只能查看自己创建的学生成绩
     if session.get("role") != "admin" and student["created_by"] != session["user_id"]:

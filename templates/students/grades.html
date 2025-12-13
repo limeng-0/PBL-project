@@ -13,36 +13,26 @@
     <div class="card-body">
         <div class="row">
             <div class="col-md-6">
-                <table class="table table-borderless">
-                    <tr>
-                        <th>学号：</th>
-                        <td>{{ student.student_id }}</td>
-                    </tr>
-                    <tr>
-                        <th>姓名：</th>
-                        <td>{{ student.name }}</td>
-                    </tr>
-                    <tr>
-                        <th>性别：</th>
-                        <td>{{ student.gender }}</td>
-                    </tr>
-                </table>
+                <div class="mb-3">
+                    <p class="mb-1"><strong>学号：</strong>{{ student.student_id }}</p>
+                </div>
+                <div class="mb-3">
+                    <p class="mb-1"><strong>姓名：</strong>{{ student.name }}</p>
+                </div>
+                <div class="mb-3">
+                    <p class="mb-1"><strong>性别：</strong>{{ student.gender }}</p>
+                </div>
             </div>
             <div class="col-md-6">
-                <table class="table table-borderless">
-                    <tr>
-                        <th>专业：</th>
-                        <td>{{ student.major_name or '未设置' }}</td>
-                    </tr>
-                    <tr>
-                        <th>班级：</th>
-                        <td>{{ student.class_name or '未设置' }}</td>
-                    </tr>
-                    <tr>
-                        <th>联系电话：</th>
-                        <td>{{ student.phone or '未设置' }}</td>
-                    </tr>
-                </table>
+                <div class="mb-3">
+                    <p class="mb-1"><strong>专业：</strong>{{ student.major_name or '未设置' }}</p>
+                </div>
+                <div class="mb-3">
+                    <p class="mb-1"><strong>班级：</strong>{{ student.class_name or '未设置' }}</p>
+                </div>
+                <div class="mb-3">
+                    <p class="mb-1"><strong>联系电话：</strong>{{ student.phone or '未设置' }}</p>
+                </div>
             </div>
         </div>
     </div>

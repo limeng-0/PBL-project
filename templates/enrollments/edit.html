@@ -15,24 +15,32 @@
             <div class="card-body">
                 <form method="post">
                     <div class="mb-3">
-                        <label class="form-label">学生</label>
-                        <div class="form-control-plaintext">
-                            {{ enrollment.student_id }} - {{ enrollment.student_name }}
-                        </div>
+                        <label for="student_id" class="form-label">学生</label>
+                        <select class="form-select" id="student_id" name="student_id" required>
+                            <option value="">请选择学生</option>
+                            {% for student in students %}
+                            <option value="{{ student.id }}" {% if enrollment.student_id == student.student_id %}selected{% endif %}>{{ student.student_id }} - {{ student.name }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">课程</label>
-                        <div class="form-control-plaintext">
-                            {{ enrollment.code }} - {{ enrollment.course_name }}
-                        </div>
+                        <label for="course_id" class="form-label">课程</label>
+                        <select class="form-select" id="course_id" name="course_id" required>
+                            <option value="">请选择课程</option>
+                            {% for course in courses %}
+                            <option value="{{ course.id }}" {% if enrollment.code == course.code %}selected{% endif %}>{{ course.code }} - {{ course.name }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="semester" class="form-label">学期</label>
-                        <input type="text" class="form-control" id="semester" name="semester" value="{{ enrollment.semester }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="grade" class="form-label">成绩</label>
-                        <input type="number" class="form-control" id="grade" name="grade" min="0" max="100" step="0.1" value="{{ enrollment.grade }}">
+                        <select class="form-select" id="semester" name="semester" required>
+                            <option value="">请选择学期</option>
+                            <option value="2023-2024学年第一学期" {% if enrollment.semester == '2023-2024学年第一学期' %}selected{% endif %}>2023-2024学年第一学期</option>
+                            <option value="2023-2024学年第二学期" {% if enrollment.semester == '2023-2024学年第二学期' %}selected{% endif %}>2023-2024学年第二学期</option>
+                            <option value="2024-2025学年第一学期" {% if enrollment.semester == '2024-2025学年第一学期' %}selected{% endif %}>2024-2025学年第一学期</option>
+                            <option value="2024-2025学年第二学期" {% if enrollment.semester == '2024-2025学年第二学期' %}selected{% endif %}>2024-2025学年第二学期</option>
+                        </select>
                     </div>
                     <button type="submit" class="btn btn-primary">保存更改</button>
                     <a href="{{ url_for('enrollments') }}" class="btn btn-secondary">取消</a>
