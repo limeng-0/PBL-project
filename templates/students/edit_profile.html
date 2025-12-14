@@ -14,7 +14,24 @@
         <h6 class="m-0 font-weight-bold">编辑基本信息</h6>
     </div>
     <div class="card-body">
-        <form method="post" action="{{ url_for('edit_profile') }}">
+        <form method="post" action="{{ url_for('edit_profile') }}" enctype="multipart/form-data">
+            <div class="row mb-3">
+                <div class="col-md-12 text-center mb-4">
+                    <div class="position-relative d-inline-block">
+                        {% if student and student.avatar %}
+                        <img src="{{ url_for('static', filename=student.avatar) }}" alt="头像" class="rounded-circle" id="avatarPreview" style="width: 150px; height: 150px; object-fit: cover;">
+                        {% else %}
+                        <img src="https://picsum.photos/seed/default/150/150.jpg" alt="头像" class="rounded-circle" id="avatarPreview" style="width: 150px; height: 150px; object-fit: cover;">
+                        {% endif %}
+                        <div class="position-absolute bottom-0 end-0">
+                            <label for="avatar" class="btn btn-sm btn-primary rounded-circle" style="width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-camera"></i>
+                            </label>
+                            <input type="file" id="avatar" name="avatar" accept="image/*" style="display: none;" onchange="previewAvatar(event)">
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label for="student_id" class="form-label">学号</label>
@@ -22,13 +39,13 @@
                 </div>
                 <div class="col-md-6">
                     <label for="name" class="form-label">姓名</label>
-                    <input type="text" class="form-control" id="name" value="{{ student.name if student else '' }}" readonly>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ student.name if student else '' }}">
                 </div>
             </div>
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label for="gender" class="form-label">性别</label>
-                    <select class="form-select" id="gender" name="gender" disabled>
+                    <select class="form-select" id="gender" name="gender">
                         <option value="男" {{ 'selected' if student and student.gender == '男' else '' }}>男</option>
                         <option value="女" {{ 'selected' if student and student.gender == '女' else '' }}>女</option>
                     </select>
@@ -61,24 +78,7 @@
     </div>
 </div>
 
-<div class="card shadow mb-4">
-    <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold">账户安全</h6>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-6">
-                <p><strong>用户名：</strong> {{ session.username }}</p>
-                <p><strong>密码：</strong> ******</p>
-            </div>
-            <div class="col-md-6">
-                <a href="{{ url_for('change_password') }}" class="btn btn-primary">
-                    <i class="fas fa-key"></i> 修改密码
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -105,5 +105,15 @@
             }
         });
     });
+
+    // 头像预览函数
+    function previewAvatar(event) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            const output = document.getElementById('avatarPreview');
+            output.src = reader.result;
+        }
+        reader.readAsDataURL(event.target.files[0]);
+    }
 </script>
 {% endblock %}

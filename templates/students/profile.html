@@ -20,7 +20,19 @@
     <div class="card-body">
         <div class="row">
             <div class="col-lg-4 text-center mb-4">
-                <img src="https://picsum.photos/seed/{{ student.student_id if student else 'default' }}/200/200.jpg" class="rounded-circle img-fluid" alt="头像">
+                <div class="position-relative d-inline-block">
+                    {% if student and student.avatar and student.avatar != '' %}
+                    <img src="/{{ student.avatar }}" class="rounded-circle img-fluid clickable-avatar" alt="头像" id="avatarPreview" style="width: 200px; height: 200px; object-fit: cover; cursor: pointer;">
+                    {% else %}
+                    <img src="https://picsum.photos/seed/default/200/200.jpg" class="rounded-circle img-fluid clickable-avatar" alt="头像" id="avatarPreview" style="width: 200px; height: 200px; object-fit: cover; cursor: pointer;">
+                    {% endif %}
+                    <div class="position-absolute bottom-0 end-0">
+                        <label for="avatar" class="btn btn-sm btn-primary rounded-circle" style="width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-camera"></i>
+                        </label>
+                        <input type="file" id="avatar" name="avatar" accept="image/*" style="display: none;" onchange="previewAvatar(event)">
+                    </div>
+                </div>
                 <h5 class="mt-3">{{ student.name if student else '未知' }}</h5>
                 <p class="text-muted">{{ student.major_name if student else '未分配专业' }}</p>
             </div>
@@ -70,44 +82,7 @@
     </div>
 </div>
 
-<!-- 学业信息 -->
-<div class="card shadow mb-4">
-    <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold">学业信息</h6>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-6">
-                <div class="row mb-3">
-                    <div class="col-sm-4"><strong>已修学分：</strong></div>
-                    <div class="col-sm-8">85</div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-sm-4"><strong>平均绩点：</strong></div>
-                    <div class="col-sm-8">3.65</div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-sm-4"><strong>专业排名：</strong></div>
-                    <div class="col-sm-8">15/120</div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="row mb-3">
-                    <div class="col-sm-4"><strong>必修学分：</strong></div>
-                    <div class="col-sm-8">65</div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-sm-4"><strong>选修学分：</strong></div>
-                    <div class="col-sm-8">20</div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-sm-4"><strong>获得证书：</strong></div>
-                    <div class="col-sm-8">3</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <!-- 修改信息模态框 -->
 <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
@@ -154,7 +129,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-primary">保存更改</button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('changePasswordForm').submit()">保存更改</button>
             </div>
         </div>
     </div>
@@ -168,11 +143,11 @@
     <div class="card-body">
         <div class="row">
             <div class="col-md-6">
-                <p><strong>用户名：</strong> student001</p>
+                <p><strong>用户名：</strong> {{ session.username }}</p>
                 <p><strong>密码：</strong> ******</p>
-                <p><strong>上次登录：</strong> 2023-12-15 14:30:22</p>
+
             </div>
-            <div class="col-md-6">
+            <div class="col-md-6 d-flex justify-content-end align-items-center">
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
                     <i class="fas fa-key"></i> 修改密码
                 </button>
@@ -189,24 +164,24 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form>
+                <form id="changePasswordForm" method="post" action="{{ url_for('change_password') }}">
                     <div class="mb-3">
-                        <label for="currentPassword" class="form-label">当前密码</label>
-                        <input type="password" class="form-control" id="currentPassword">
+                        <label for="old_password" class="form-label">当前密码</label>
+                        <input type="password" class="form-control" id="old_password" name="old_password" required>
                     </div>
                     <div class="mb-3">
-                        <label for="newPassword" class="form-label">新密码</label>
-                        <input type="password" class="form-control" id="newPassword">
+                        <label for="new_password" class="form-label">新密码</label>
+                        <input type="password" class="form-control" id="new_password" name="new_password" required minlength="6">
                     </div>
                     <div class="mb-3">
-                        <label for="confirmPassword" class="form-label">确认新密码</label>
-                        <input type="password" class="form-control" id="confirmPassword">
+                        <label for="confirm_password" class="form-label">确认新密码</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required minlength="6">
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-primary">保存更改</button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('changePasswordForm').submit()">保存更改</button>
             </div>
         </div>
     </div>
@@ -217,7 +192,82 @@
 <script>
     // 模拟数据，实际应用中应从后端获取
     document.addEventListener('DOMContentLoaded', function() {
-        // 这里可以添加页面加载后的初始化代码
+        // 修改密码表单验证
+        const changePasswordForm = document.getElementById('changePasswordForm');
+        if (changePasswordForm) {
+            changePasswordForm.addEventListener('submit', function(event) {
+                const newPassword = document.getElementById('new_password').value;
+                const confirmPassword = document.getElementById('confirm_password').value;
+
+                if (newPassword !== confirmPassword) {
+                    event.preventDefault();
+                    alert('新密码和确认密码不匹配，请重新输入');
+                    return false;
+                }
+
+                if (newPassword.length < 6) {
+                    event.preventDefault();
+                    alert('新密码长度至少为6位');
+                    return false;
+                }
+            });
+        }
+    });
+
+    // 头像预览函数
+    function previewAvatar(event) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            const output = document.getElementById('avatarPreview');
+            output.src = reader.result;
+        }
+        reader.readAsDataURL(event.target.files[0]);
+    }
+
+    // 头像上传功能
+    document.addEventListener('DOMContentLoaded', function() {
+        const avatarInput = document.getElementById('avatar');
+        const clickableAvatar = document.querySelector('.clickable-avatar');
+
+        if (avatarInput && clickableAvatar) {
+            // 点击头像触发文件选择
+            clickableAvatar.addEventListener('click', function() {
+                avatarInput.click();
+            });
+
+            // 文件选择后上传
+            avatarInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const formData = new FormData();
+                    formData.append('avatar', this.files[0]);
+
+                    fetch('/upload_avatar', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // 上传成功，直接更新头像而不刷新页面
+                            const avatarPreview = document.getElementById('avatarPreview');
+                            avatarPreview.src = '/' + data.avatar_path + '?t=' + new Date().getTime();
+                            alert('头像上传成功');
+                        } else {
+                            alert('上传失败：' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('上传过程中发生错误: ' + error.message);
+                    });
+                }
+            });
+        }
     });
 </script>
 {% endblock %}

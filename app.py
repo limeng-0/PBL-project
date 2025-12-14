@@ -1,16 +1,30 @@
 
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory
+from flask_wtf.csrf import CSRFProtect
 import sqlite3
 from functools import wraps
 from datetime import datetime
+import os
+import time
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'  # 用于session加密
+csrf = CSRFProtect(app)  # 启用CSRF保护
 
 # 数据库初始化
 def init_db():
     conn = sqlite3.connect('student_management.db')
     cursor = conn.cursor()
+
+    # 检查students表是否有avatar字段，如果没有则添加
+    cursor.execute("PRAGMA table_info(students)")
+    columns = [column[1] for column in cursor.fetchall()]
+
+    if 'avatar' not in columns:
+        cursor.execute("ALTER TABLE students ADD COLUMN avatar TEXT")
+        conn.commit()
+        print("已添加avatar字段到students表")
 
     # 用户表
     cursor.execute("""
@@ -44,6 +58,7 @@ def init_db():
         enrollment_date TEXT,
         created_by INTEGER,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        avatar TEXT,
         FOREIGN KEY (major_id) REFERENCES majors (id),
         FOREIGN KEY (class_id) REFERENCES classes (id),
         FOREIGN KEY (created_by) REFERENCES users (id)
@@ -340,6 +355,8 @@ def edit_profile():
 
     if request.method == 'POST':
         # 获取表单数据
+        name = request.form.get("name")
+        gender = request.form.get("gender")
         birth_date = request.form.get("birth_date")
         address = request.form.get("address")
         phone = request.form.get("phone")
@@ -349,9 +366,9 @@ def edit_profile():
         if student_record_id:
             conn.execute("""
                 UPDATE students SET
-                birth_date = ?, address = ?, phone = ?, email = ?
+                name = ?, gender = ?, birth_date = ?, address = ?, phone = ?, email = ?
                 WHERE id = ?
-            """, (birth_date, address, phone, email, student_record_id))
+            """, (name, gender, birth_date, address, phone, email, student_record_id))
             conn.commit()
 
         conn.close()
@@ -367,6 +384,41 @@ def edit_profile():
     conn.close()
 
     return render_template("students/edit_profile.html", student=student)
+
+# 忘记密码
+@app.route("/forgot_password", methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+
+        # 验证输入
+        if not username or not password or not confirm_password:
+            flash('请填写所有必填字段', 'danger')
+            return render_template("forgot_password.html")
+
+        if password != confirm_password:
+            flash('两次输入的密码不一致', 'danger')
+            return render_template("forgot_password.html")
+
+        # 查找用户
+        conn = get_db_connection()
+        user = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+
+        if user:
+            # 更新密码
+            conn.execute("UPDATE users SET password = ? WHERE id = ?", (password, user["id"]))
+            conn.commit()
+            conn.close()
+            flash('密码已成功重置！', 'success')
+            return redirect(url_for('login'))
+        else:
+            conn.close()
+            flash('未找到该用户名', 'danger')
+            return render_template("forgot_password.html")
+
+    return render_template("forgot_password.html")
 
 # 修改密码
 @app.route("/change_password", methods=['GET', 'POST'])
@@ -469,25 +521,29 @@ def students_dashboard():
 
         # 获取平均成绩
         avg_grade = conn.execute("""
-            SELECT AVG(grade) as avg
-            FROM enrollments
-            WHERE student_id = ? AND grade IS NOT NULL
+            SELECT AVG(g.score) as avg
+            FROM grades g
+            JOIN enrollments e ON g.enrollment_id = e.id
+            WHERE e.student_id = ?
         """, (student_record_id,)).fetchone()["avg"]
 
         average_grade = "{:.2f}".format(avg_grade) if avg_grade else "0.00"
 
         # 获取已出成绩的课程数
         graded_courses = conn.execute("""
-            SELECT COUNT(*) as count
-            FROM enrollments
-            WHERE student_id = ? AND grade IS NOT NULL
+            SELECT COUNT(DISTINCT e.id) as count
+            FROM enrollments e
+            JOIN grades g ON e.id = g.enrollment_id
+            WHERE e.student_id = ?
         """, (student_record_id,)).fetchone()["count"]
 
         # 获取未出成绩的课程数
         ungraded_courses = conn.execute("""
             SELECT COUNT(*) as count
             FROM enrollments
-            WHERE student_id = ? AND grade IS NULL
+            WHERE student_id = ? AND id NOT IN (
+                SELECT DISTINCT enrollment_id FROM grades
+            )
         """, (student_record_id,)).fetchone()["count"]
 
         # 获取学生个人信息
@@ -513,7 +569,9 @@ def students_dashboard():
                           enrollment_count=enrollment_count,
                           average_grade=average_grade,
                           graded_courses=graded_courses,
-                          ungraded_courses=ungraded_courses)
+                          ungraded_courses=ungraded_courses,
+                          student_count=1,  # 当前登录的学生数量为1
+                          pending_grades=ungraded_courses)  # 待录入成绩等于未出成绩的课程数
     
     # 普通用户仪表盘数据
     student_count = conn.execute("SELECT COUNT(*) as count FROM students WHERE created_by = ?", 
@@ -1547,6 +1605,110 @@ def export_grades():
     )
 
     return response
+
+# 头像上传路由
+@app.route('/upload_avatar', methods=['POST'])
+@csrf.exempt  # 豁免CSRF保护，因为这是文件上传
+@login_required
+def upload_avatar():
+    try:
+        if 'avatar' not in request.files:
+            return jsonify({'success': False, 'message': '没有选择文件'})
+
+        avatar = request.files['avatar']
+        if avatar.filename == '':
+            return jsonify({'success': False, 'message': '没有选择文件'})
+
+        if avatar and allowed_file(avatar.filename):
+            # 使用Flask内置的secure_filename确保文件名安全
+            filename = secure_filename(avatar.filename)
+            # 生成唯一文件名
+            unique_filename = f"{session.get('username')}_{int(time.time())}_{filename}"
+
+            # 构建文件路径
+            avatar_path = f"uploads/avatars/{unique_filename}"
+            full_path = os.path.join('static', avatar_path)
+
+            # 保存文件
+            try:
+                # 确保目录存在
+                os.makedirs(os.path.dirname(full_path), exist_ok=True)
+
+                # 保存文件
+                avatar.save(full_path)
+                print(f"头像已保存到: {full_path}")
+
+            except Exception as e:
+                print(f"保存头像失败: {str(e)}")
+                return jsonify({'success': False, 'message': f'保存文件失败: {str(e)}'})
+
+            # 更新数据库
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+            except Exception as e:
+                print(f"连接数据库失败: {str(e)}")
+                return jsonify({'success': False, 'message': f'连接数据库失败: {str(e)}'})
+
+            # 获取当前用户信息
+            cursor.execute("SELECT * FROM users WHERE username = ?", (session.get('username'),))
+            user = cursor.fetchone()
+
+            if not user:
+                conn.close()
+                return jsonify({'success': False, 'message': '找不到用户记录'})
+
+            # 尝试通过student_record_id查找学生记录
+            student_record = None
+            if user["student_record_id"]:
+                cursor.execute("SELECT * FROM students WHERE id = ?", (user["student_record_id"],))
+                student_record = cursor.fetchone()
+
+            # 如果通过student_record_id找不到，尝试通过student_id查找
+            if not student_record and user["student_id"]:
+                cursor.execute("SELECT * FROM students WHERE student_id = ?", (user["student_id"],))
+                student_record = cursor.fetchone()
+
+                # 如果找到了学生记录，更新用户表中的student_record_id
+                if student_record:
+                    cursor.execute("UPDATE users SET student_record_id = ? WHERE id = ?", 
+                                  (student_record["id"], user["id"]))
+                    conn.commit()
+
+            if student_record:
+                # 更新头像路径
+                try:
+                    cursor.execute("UPDATE students SET avatar = ? WHERE id = ?", (avatar_path, student_record["id"]))
+                    conn.commit()
+                    print(f"已更新学生ID {student_record['id']} 的头像路径为: {avatar_path}")
+                    conn.close()
+
+                    return jsonify({'success': True, 'message': '头像上传成功', 'avatar_path': avatar_path})
+                except Exception as e:
+                    print(f"更新数据库失败: {str(e)}")
+                    conn.close()
+                    return jsonify({'success': False, 'message': f'更新数据库失败: {str(e)}'})
+            else:
+                print(f"找不到学生记录，用户名: {session.get('username')}")
+                conn.close()
+                return jsonify({'success': False, 'message': '找不到学生记录'})
+        else:
+            return jsonify({'success': False, 'message': '不支持的文件类型'})
+    except Exception as e:
+        print(f"上传头像过程中发生错误: {str(e)}")
+        return jsonify({'success': False, 'message': f'上传头像过程中发生错误: {str(e)}'})
+
+# 检查文件类型是否允许
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# 处理上传的头像文件的访问
+@app.route('/uploads/avatars/<filename>')
+def uploaded_avatar(filename):
+    project_dir = os.path.dirname(os.path.abspath(__file__))
+    upload_dir = os.path.join(project_dir, 'static', 'uploads', 'avatars')
+    return send_from_directory(upload_dir, filename)
 
 if __name__ == "__main__":
     init_db()  # 初始化数据库
