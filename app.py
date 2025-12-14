@@ -878,10 +878,10 @@ def create_enrollment():
 
     # 获取学生和课程列表
     if session.get("role") == "admin":
-        students = conn.execute("SELECT * FROM students ORDER BY name").fetchall()
+        students = conn.execute("SELECT id, student_id, name FROM students ORDER BY student_id").fetchall()
     else:
         # 普通用户只能看到自己创建的学生
-        students = conn.execute("SELECT * FROM students WHERE created_by = ? ORDER BY name", 
+        students = conn.execute("SELECT id, student_id, name FROM students WHERE created_by = ? ORDER BY student_id", 
                                (session["user_id"],)).fetchall()
 
     courses = conn.execute("SELECT * FROM courses ORDER BY code").fetchall()
@@ -1039,7 +1039,7 @@ def grades():
             query += " AND s.created_by = ?"
         params.append(session["user_id"])
 
-    query += " ORDER BY g.created_at DESC"
+    query += " ORDER BY g.id ASC"
 
     # 执行查询
     grades = conn.execute(query, params).fetchall()
@@ -1217,9 +1217,95 @@ def import_grades():
 @app.route("/grades/export")
 @login_required
 def export_grades():
-    # 这里应该实现导出逻辑
-    flash("导出功能正在开发中")
-    return redirect(url_for("grades"))
+    conn = get_db_connection()
+
+    # 获取筛选条件
+    student_id = request.args.get('student_id')
+    course_id = request.args.get('course_id')
+    semester = request.args.get('semester')
+
+    # 构建查询
+    query = """
+        SELECT s.student_id as '学号', s.name as '姓名', 
+               c.code as '课程代码', c.name as '课程名称', 
+               e.semester as '学期', g.score as '成绩',
+               u.username as '录入教师', g.created_at as '录入时间'
+        FROM grades g
+        JOIN enrollments e ON g.enrollment_id = e.id
+        JOIN students s ON e.student_id = s.id
+        JOIN courses c ON e.course_id = c.id
+        LEFT JOIN users u ON g.teacher_id = u.id
+    """
+    params = []
+
+    # 添加筛选条件
+    if student_id:
+        query += " WHERE s.id = ?"
+        params.append(student_id)
+
+    if course_id:
+        if not student_id:
+            query += " WHERE c.id = ?"
+        else:
+            query += " AND c.id = ?"
+        params.append(course_id)
+
+    if semester:
+        if not student_id and not course_id:
+            query += " WHERE e.semester = ?"
+        else:
+            query += " AND e.semester = ?"
+        params.append(semester)
+
+    # 权限检查：普通用户只能导出自己创建的学生成绩
+    if session.get("role") != "admin":
+        if not student_id and not course_id and not semester:
+            query += " WHERE s.created_by = ?"
+        else:
+            query += " AND s.created_by = ?"
+        params.append(session["user_id"])
+
+    query += " ORDER BY s.student_id, e.semester, c.code"
+
+    # 执行查询
+    grades = conn.execute(query, params).fetchall()
+
+    # 生成CSV内容
+    import csv
+    from io import StringIO
+    from flask import Response
+
+    # 创建一个内存中的文件对象
+    output = StringIO()
+
+    # 写入CSV数据
+    if grades:
+        # 获取列名
+        fieldnames = [key for key in grades[0].keys()]
+        writer = csv.DictWriter(output, fieldnames=fieldnames)
+
+        # 写入表头
+        writer.writeheader()
+
+        # 写入数据行
+        for grade in grades:
+            writer.writerow({key: grade[key] for key in fieldnames})
+
+    # 获取CSV内容
+    csv_content = output.getvalue()
+    output.close()
+    conn.close()
+
+    # 创建响应
+    response = Response(
+        csv_content,
+        mimetype='text/csv',
+        headers={
+            'Content-Disposition': f'attachment; filename=成绩导出_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        }
+    )
+
+    return response
 
 if __name__ == "__main__":
     init_db()  # 初始化数据库

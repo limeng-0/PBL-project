@@ -20,7 +20,6 @@
                 <thead class="table-light">
                     <tr>
                         <th>ID</th>
-                        <th>学号</th>
                         <th>学生姓名</th>
                         <th>课程代码</th>
                         <th>课程名称</th>
@@ -33,7 +32,6 @@
                     {% for enrollment in enrollments %}
                     <tr>
                         <td>{{ enrollment.id }}</td>
-                        <td>{{ enrollment.student_id }}</td>
                         <td>{{ enrollment.student_name }}</td>
                         <td>{{ enrollment.code }}</td>
                         <td>{{ enrollment.course_name }}</td>
