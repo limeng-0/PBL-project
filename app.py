@@ -20,7 +20,11 @@ def init_db():
         password TEXT NOT NULL,
         email TEXT UNIQUE NOT NULL,
         role TEXT NOT NULL DEFAULT 'user',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        name TEXT NOT NULL,
+        student_id TEXT UNIQUE,
+        student_record_id INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (student_record_id) REFERENCES students (id)
     )
     """)
 
@@ -107,11 +111,38 @@ def init_db():
     )
     """)
 
+    # 检查用户表是否有name、student_id和student_record_id字段，如果没有则添加
+    cursor.execute("PRAGMA table_info(users)")
+    columns = [column[1] for column in cursor.fetchall()]
+
+    if "name" not in columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN name TEXT")
+        # 为现有用户设置默认名称
+        cursor.execute("UPDATE users SET name = username WHERE name IS NULL")
+
+    if "student_id" not in columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN student_id TEXT")
+
+    if "student_record_id" not in columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN student_record_id INTEGER")
+
     # 检查是否已有管理员用户，如果没有则创建
     cursor.execute("SELECT * FROM users WHERE role='admin'")
     if not cursor.fetchone():
-        cursor.execute("INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)",
-                      ("admin", "admin123", "admin@example.com", "admin"))
+        cursor.execute("INSERT INTO users (username, password, email, role, name) VALUES (?, ?, ?, ?, ?)",
+                      ("admin", "admin123", "admin@example.com", "admin", "系统管理员"))
+
+    # 检查是否已有测试学生用户，如果没有则创建
+    cursor.execute("SELECT * FROM users WHERE username='student'")
+    if not cursor.fetchone():
+        # 先创建学生记录
+        cursor.execute("INSERT INTO students (student_id, name, gender, major_id, class_id) VALUES (?, ?, ?, ?, ?)",
+                      ("20210001", "张三", "男", 1, 1))
+        student_id = cursor.lastrowid
+
+        # 然后创建用户记录并关联到学生记录
+        cursor.execute("INSERT INTO users (username, password, email, role, name, student_id, student_record_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                      ("student", "student123", "student@example.com", "user", "张三", "20210001", student_id))
 
     conn.commit()
     conn.close()
@@ -167,6 +198,9 @@ def login():
             session["user_id"] = user["id"]
             session["username"] = user["username"]
             session["role"] = user["role"]
+            session["name"] = user["name"] if "name" in user.keys() else ""
+            session["student_id"] = user["student_id"] if "student_id" in user.keys() else ""
+            session["student_record_id"] = user["student_record_id"] if "student_record_id" in user.keys() else None
             flash("登录成功！")
             # 根据用户角色直接重定向到对应的仪表盘
             if user["role"] == "admin":
@@ -228,7 +262,111 @@ def dashboard():
 @app.route("/my_profile")
 @login_required
 def my_profile():
-    return render_template("students/profile.html")
+    conn = get_db_connection()
+
+    # 如果用户是学生，根据用户名获取其关联的学生记录
+    if session.get("role") == "user":
+        # 首先获取用户信息
+        user = conn.execute("SELECT * FROM users WHERE username = ?", 
+                          (session.get("username"),)).fetchone()
+
+        if not user:
+            conn.close()
+            flash("无法获取用户信息")
+            return redirect(url_for("dashboard"))
+
+        # 如果用户表中有student_record_id，直接使用
+        if user["student_record_id"]:
+            student = conn.execute("""
+                SELECT s.*, m.name as major_name, c.name as class_name
+                FROM students s
+                LEFT JOIN majors m ON s.major_id = m.id
+                LEFT JOIN classes c ON s.class_id = c.id
+                WHERE s.id = ?
+            """, (user["student_record_id"],)).fetchone()
+        # 否则根据学号查找学生记录
+        elif user["student_id"]:
+            student = conn.execute("""
+                SELECT s.*, m.name as major_name, c.name as class_name
+                FROM students s
+                LEFT JOIN majors m ON s.major_id = m.id
+                LEFT JOIN classes c ON s.class_id = c.id
+                WHERE s.student_id = ?
+            """, (user["student_id"],)).fetchone()
+
+            # 如果找到了学生记录，更新用户表中的student_record_id
+            if student:
+                conn.execute("UPDATE users SET student_record_id = ? WHERE id = ?",
+                            (student["id"], user["id"]))
+                conn.commit()
+        else:
+            student = None
+
+        conn.close()
+        return render_template("students/profile.html", student=student)
+    else:
+        conn.close()
+        flash("无法获取学生信息")
+        return redirect(url_for("dashboard"))
+
+# 修改个人信息
+@app.route("/edit_profile", methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    conn = get_db_connection()
+
+    # 获取用户信息
+    user = conn.execute("SELECT * FROM users WHERE username = ?", 
+                      (session.get("username"),)).fetchone()
+
+    if not user:
+        conn.close()
+        flash("无法获取用户信息")
+        return redirect(url_for("dashboard"))
+
+    # 获取学生记录ID
+    student_record_id = user["student_record_id"] if user["student_record_id"] else None
+
+    # 如果没有student_record_id，尝试根据学号查找
+    if not student_record_id and user["student_id"]:
+        student = conn.execute("SELECT * FROM students WHERE student_id = ?", 
+                             (user["student_id"],)).fetchone()
+        if student:
+            student_record_id = student["id"]
+            # 更新用户表
+            conn.execute("UPDATE users SET student_record_id = ? WHERE id = ?",
+                        (student_record_id, user["id"]))
+            conn.commit()
+
+    if request.method == 'POST':
+        # 获取表单数据
+        birth_date = request.form.get("birth_date")
+        address = request.form.get("address")
+        phone = request.form.get("phone")
+        email = request.form.get("email")
+
+        # 更新学生信息
+        if student_record_id:
+            conn.execute("""
+                UPDATE students SET
+                birth_date = ?, address = ?, phone = ?, email = ?
+                WHERE id = ?
+            """, (birth_date, address, phone, email, student_record_id))
+            conn.commit()
+
+        conn.close()
+        flash("个人信息已更新")
+        return redirect(url_for("my_profile"))
+
+    # GET请求，获取当前学生信息
+    student = None
+    if student_record_id:
+        student = conn.execute("SELECT * FROM students WHERE id = ?", 
+                              (student_record_id,)).fetchone()
+
+    conn.close()
+
+    return render_template("students/edit_profile.html", student=student)
 
 # 修改密码
 @app.route("/change_password", methods=['GET', 'POST'])
@@ -240,13 +378,36 @@ def change_password():
         new_password = request.form.get('new_password')
         confirm_password = request.form.get('confirm_password')
 
-        # 这里应该验证旧密码是否正确，并更新密码
-        # 示例代码，实际应用中应该有更严格的验证
+        # 验证输入
+        if not old_password or not new_password or not confirm_password:
+            flash('请填写所有字段', 'danger')
+            return render_template("change_password.html")
+
         if new_password != confirm_password:
             flash('新密码和确认密码不匹配', 'danger')
-        else:
+            return render_template("change_password.html")
+
+        if len(new_password) < 6:
+            flash('新密码长度至少为6位', 'danger')
+            return render_template("change_password.html")
+
+        # 验证旧密码是否正确
+        conn = get_db_connection()
+        user = conn.execute("SELECT * FROM users WHERE id = ?", (session.get("user_id"),)).fetchone()
+
+        if user and user["password"] == old_password:
+            # 更新密码
+            conn.execute("UPDATE users SET password = ? WHERE id = ?", 
+                        (new_password, session.get("user_id")))
+            conn.commit()
+            conn.close()
+
             flash('密码已成功修改', 'success')
             return redirect(url_for('my_profile'))
+        else:
+            conn.close()
+            flash('旧密码不正确', 'danger')
+            return render_template("change_password.html")
 
     return render_template("change_password.html")
 
@@ -273,6 +434,86 @@ def my_grades():
 @login_required
 def students_dashboard():
     conn = get_db_connection()
+
+    # 获取用户信息
+    user = conn.execute("SELECT * FROM users WHERE username = ?", 
+                      (session.get("username"),)).fetchone()
+
+    if not user:
+        conn.close()
+        flash("无法获取用户信息")
+        return redirect(url_for("dashboard"))
+
+    # 获取学生记录ID
+    student_record_id = user["student_record_id"] if user["student_record_id"] else None
+
+    # 如果没有student_record_id，尝试根据学号查找
+    if not student_record_id and user["student_id"]:
+        student = conn.execute("SELECT * FROM students WHERE student_id = ?", 
+                             (user["student_id"],)).fetchone()
+        if student:
+            student_record_id = student["id"]
+            # 更新用户表
+            conn.execute("UPDATE users SET student_record_id = ? WHERE id = ?",
+                        (student_record_id, user["id"]))
+            conn.commit()
+
+    # 学生仪表盘数据
+    if student_record_id:
+        # 获取该学生的选课记录数
+        enrollment_count = conn.execute("""
+            SELECT COUNT(*) as count
+            FROM enrollments
+            WHERE student_id = ?
+        """, (student_record_id,)).fetchone()["count"]
+
+        # 获取平均成绩
+        avg_grade = conn.execute("""
+            SELECT AVG(grade) as avg
+            FROM enrollments
+            WHERE student_id = ? AND grade IS NOT NULL
+        """, (student_record_id,)).fetchone()["avg"]
+
+        average_grade = "{:.2f}".format(avg_grade) if avg_grade else "0.00"
+
+        # 获取已出成绩的课程数
+        graded_courses = conn.execute("""
+            SELECT COUNT(*) as count
+            FROM enrollments
+            WHERE student_id = ? AND grade IS NOT NULL
+        """, (student_record_id,)).fetchone()["count"]
+
+        # 获取未出成绩的课程数
+        ungraded_courses = conn.execute("""
+            SELECT COUNT(*) as count
+            FROM enrollments
+            WHERE student_id = ? AND grade IS NULL
+        """, (student_record_id,)).fetchone()["count"]
+
+        # 获取学生个人信息
+        student = conn.execute("""
+            SELECT s.*, m.name as major_name, c.name as class_name
+            FROM students s
+            LEFT JOIN majors m ON s.major_id = m.id
+            LEFT JOIN classes c ON s.class_id = c.id
+            WHERE s.id = ?
+        """, (student_record_id,)).fetchone()
+    else:
+        # 如果没有学生记录，设置默认值
+        enrollment_count = 0
+        average_grade = "0.00"
+        graded_courses = 0
+        ungraded_courses = 0
+        student = None
+
+    conn.close()
+
+    return render_template("students/dashboard.html",
+                          student=student,
+                          enrollment_count=enrollment_count,
+                          average_grade=average_grade,
+                          graded_courses=graded_courses,
+                          ungraded_courses=ungraded_courses)
     
     # 普通用户仪表盘数据
     student_count = conn.execute("SELECT COUNT(*) as count FROM students WHERE created_by = ?", 

@@ -1,0 +1,109 @@
+{% extends "student_base.html" %}
+
+{% block title %}编辑个人信息 - 学生信息管理系统{% endblock %}
+
+{% block header %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">编辑个人信息</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold">编辑基本信息</h6>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{{ url_for('edit_profile') }}">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="student_id" class="form-label">学号</label>
+                    <input type="text" class="form-control" id="student_id" value="{{ student.student_id if student else '' }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label for="name" class="form-label">姓名</label>
+                    <input type="text" class="form-control" id="name" value="{{ student.name if student else '' }}" readonly>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="gender" class="form-label">性别</label>
+                    <select class="form-select" id="gender" name="gender" disabled>
+                        <option value="男" {{ 'selected' if student and student.gender == '男' else '' }}>男</option>
+                        <option value="女" {{ 'selected' if student and student.gender == '女' else '' }}>女</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="birth_date" class="form-label">出生日期</label>
+                    <input type="date" class="form-control" id="birth_date" name="birth_date" value="{{ student.birth_date if student else '' }}">
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="phone" class="form-label">联系电话</label>
+                    <input type="tel" class="form-control" id="phone" name="phone" value="{{ student.phone if student else '' }}">
+                </div>
+                <div class="col-md-6">
+                    <label for="email" class="form-label">电子邮箱</label>
+                    <input type="email" class="form-control" id="email" name="email" value="{{ student.email if student else '' }}">
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="address" class="form-label">家庭住址</label>
+                <textarea class="form-control" id="address" name="address" rows="3">{{ student.address if student else '' }}</textarea>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('my_profile') }}" class="btn btn-secondary">取消</a>
+                <button type="submit" class="btn btn-primary">保存更改</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold">账户安全</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>用户名：</strong> {{ session.username }}</p>
+                <p><strong>密码：</strong> ******</p>
+            </div>
+            <div class="col-md-6">
+                <a href="{{ url_for('change_password') }}" class="btn btn-primary">
+                    <i class="fas fa-key"></i> 修改密码
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 表单验证
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+
+            // 简单的邮箱验证
+            if (email && !email.match(/^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)+$/)) {
+                alert('请输入有效的电子邮箱地址');
+                event.preventDefault();
+                return;
+            }
+
+            // 简单的手机号验证
+            if (phone && !phone.match(/^1[3-9]\d{9}$/)) {
+                alert('请输入有效的手机号码');
+                event.preventDefault();
+                return;
+            }
+        });
+    });
+</script>
+{% endblock %}
