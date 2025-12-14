@@ -1,0 +1,223 @@
+{% extends "student_base.html" %}
+
+{% block title %}个人信息 - 学生信息管理系统{% endblock %}
+
+{% block header %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">个人信息</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- 个人信息卡片 -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold">基本信息</h6>
+        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+            <i class="fas fa-edit"></i> 编辑
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-lg-4 text-center mb-4">
+                <img src="https://picsum.photos/seed/student123/200/200.jpg" class="rounded-circle img-fluid" alt="头像">
+                <h5 class="mt-3">张三</h5>
+                <p class="text-muted">计算机科学与技术专业</p>
+            </div>
+            <div class="col-lg-8">
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>学号：</strong></div>
+                    <div class="col-sm-9">20210001</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>姓名：</strong></div>
+                    <div class="col-sm-9">张三</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>性别：</strong></div>
+                    <div class="col-sm-9">男</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>出生日期：</strong></div>
+                    <div class="col-sm-9">2000-01-01</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>专业：</strong></div>
+                    <div class="col-sm-9">计算机科学与技术</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>班级：</strong></div>
+                    <div class="col-sm-9">计科2101班</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>联系电话：</strong></div>
+                    <div class="col-sm-9">13800138000</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>电子邮箱：</strong></div>
+                    <div class="col-sm-9">zhangsan@example.com</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>家庭住址：</strong></div>
+                    <div class="col-sm-9">北京市海淀区中关村大街1号</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>入学日期：</strong></div>
+                    <div class="col-sm-9">2021-09-01</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 学业信息 -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold">学业信息</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>已修学分：</strong></div>
+                    <div class="col-sm-8">85</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>平均绩点：</strong></div>
+                    <div class="col-sm-8">3.65</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>专业排名：</strong></div>
+                    <div class="col-sm-8">15/120</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>必修学分：</strong></div>
+                    <div class="col-sm-8">65</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>选修学分：</strong></div>
+                    <div class="col-sm-8">20</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>获得证书：</strong></div>
+                    <div class="col-sm-8">3</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 修改信息模态框 -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editProfileModalLabel">编辑个人信息</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">姓名</label>
+                            <input type="text" class="form-control" id="name" value="张三">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="gender" class="form-label">性别</label>
+                            <select class="form-select" id="gender">
+                                <option value="男" selected>男</option>
+                                <option value="女">女</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="birthDate" class="form-label">出生日期</label>
+                            <input type="date" class="form-control" id="birthDate" value="2000-01-01">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label">联系电话</label>
+                            <input type="tel" class="form-control" id="phone" value="13800138000">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">电子邮箱</label>
+                        <input type="email" class="form-control" id="email" value="zhangsan@example.com">
+                    </div>
+                    <div class="mb-3">
+                        <label for="address" class="form-label">家庭住址</label>
+                        <textarea class="form-control" id="address" rows="3">北京市海淀区中关村大街1号</textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary">保存更改</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 修改密码模态框 -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold">账户安全</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>用户名：</strong> student001</p>
+                <p><strong>密码：</strong> ******</p>
+                <p><strong>上次登录：</strong> 2023-12-15 14:30:22</p>
+            </div>
+            <div class="col-md-6">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                    <i class="fas fa-key"></i> 修改密码
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changePasswordModalLabel">修改密码</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="currentPassword" class="form-label">当前密码</label>
+                        <input type="password" class="form-control" id="currentPassword">
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">新密码</label>
+                        <input type="password" class="form-control" id="newPassword">
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">确认新密码</label>
+                        <input type="password" class="form-control" id="confirmPassword">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary">保存更改</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 模拟数据，实际应用中应从后端获取
+    document.addEventListener('DOMContentLoaded', function() {
+        // 这里可以添加页面加载后的初始化代码
+    });
+</script>
+{% endblock %}

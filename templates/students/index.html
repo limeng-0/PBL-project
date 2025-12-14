@@ -15,25 +15,152 @@
         <h5 class="card-title mb-0">学生列表</h5>
     </div>
     <div class="card-body">
-        <div class="table-responsive" style="overflow-x: auto;">
-            <table class="table table-bordered table-hover" style="min-width: 1200px;">
-                <thead class="table-light">
+        <style>
+            .table-container {
+                position: relative;
+                overflow-x: auto;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+                max-height: 80vh;
+            }
+
+            .table-container table {
+                margin-bottom: 0;
+                min-width: 100%;
+            }
+
+            .table-container thead th {
+                background-color: #f8f9fa;
+                color: #495057;
+                font-weight: 600;
+                position: sticky;
+                top: 0;
+                z-index: 5;
+                white-space: nowrap;
+                padding: 12px 15px;
+                border: none;
+            }
+
+            .table-container .fixed-column {
+                position: sticky;
+                right: 0;
+                background-color: white;
+                z-index: 10;
+                box-shadow: -5px 0 5px -5px rgba(0, 0, 0, 0.1);
+                min-width: 180px;
+                width: 180px;
+            }
+
+            .table-container thead .fixed-column {
+                background-color: #f8f9fa;
+            }
+
+            .table-container tbody tr:nth-child(even) .fixed-column {
+                background-color: #f8f9fa;
+            }
+
+            .table-container tbody tr:hover .fixed-column {
+                background-color: #e9ecef;
+            }
+
+            .table-container tbody tr {
+                transition: all 0.2s ease;
+            }
+
+            .table-container tbody tr:hover {
+                background-color: #e9ecef;
+                transform: scale(1.005);
+            }
+
+            .table-container tbody td {
+                padding: 12px 15px;
+                vertical-align: middle;
+                white-space: nowrap;
+                border-bottom: 1px solid #e9ecef;
+            }
+
+            .table-container tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            .action-buttons {
+                display: flex;
+                gap: 5px;
+                flex-wrap: nowrap;
+            }
+
+            .action-buttons .btn {
+                border-radius: 4px;
+                font-size: 0.8rem;
+                padding: 5px 10px;
+                font-weight: 500;
+                transition: all 0.2s;
+                white-space: nowrap;
+            }
+
+            .action-buttons .btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+            }
+
+            .student-id {
+                font-family: 'Courier New', monospace;
+                background-color: #e9ecef;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-weight: 500;
+            }
+
+            .student-name {
+                font-weight: 600;
+                color: #4361ee;
+            }
+
+            .empty-value {
+                color: #adb5bd;
+                font-style: italic;
+            }
+
+            /* 自定义滚动条样式 */
+            .table-container::-webkit-scrollbar {
+                height: 10px;
+                width: 10px;
+            }
+
+            .table-container::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 5px;
+            }
+
+            .table-container::-webkit-scrollbar-thumb {
+                background: #c1c1c1;
+                border-radius: 5px;
+            }
+
+            .table-container::-webkit-scrollbar-thumb:hover {
+                background: #a8a8a8;
+            }
+        </style>
+
+        <div class="table-container">
+            <table class="table table-hover">
+                <thead>
                     <tr>
                         <th>ID</th>
                         <th>学号</th>
-                        <th style="width: 100px;">姓名</th>
-                        <th style="width: 80px;">性别</th>
-                        <th style="width: 120px;">专业</th>
-                        <th style="width: 100px;">班级</th>
+                        <th>姓名</th>
+                        <th>性别</th>
+                        <th>专业</th>
+                        <th>班级</th>
                         <th>联系电话</th>
                         <th>电子邮箱</th>
-                        <th style="width: 110px;">入学日期</th>
-                        <th style="width: 110px;">出生日期</th>
-                        <th style="width: 200px;">家庭住址</th>
+                        <th>入学日期</th>
+                        <th>出生日期</th>
+                        <th>家庭住址</th>
                         {% if session.role == 'admin' %}
                         <th>创建者</th>
                         {% endif %}
-                        <th style="width: 180px;">操作</th>
+                        <th class="fixed-column">操作</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -42,18 +169,18 @@
                         <td>{{ student.id }}</td>
                         <td>{{ student.student_id }}</td>
                         <td>{{ student.name }}</td>
-                        <td style="white-space: nowrap;">{{ student.gender }}</td>
-                        <td>{{ student.major_name or '未设置' }}</td>
-                        <td>{{ student.class_name or '未设置' }}</td>
-                        <td>{{ student.phone or '未设置' }}</td>
-                        <td>{{ student.email or '未设置' }}</td>
-                        <td>{{ student.enrollment_date or '未设置' }}</td>
-                        <td>{{ student.birth_date or '未设置' }}</td>
-                        <td>{{ student.address or '未设置' }}</td>
+                        <td>{{ student.gender }}</td>
+                        <td>{{ student.major_name or '<span class="empty-value">未设置</span>'|safe }}</td>
+                        <td>{{ student.class_name or '<span class="empty-value">未设置</span>'|safe }}</td>
+                        <td>{{ student.phone or '<span class="empty-value">未设置</span>'|safe }}</td>
+                        <td>{{ student.email or '<span class="empty-value">未设置</span>'|safe }}</td>
+                        <td>{{ student.enrollment_date or '<span class="empty-value">未设置</span>'|safe }}</td>
+                        <td>{{ student.birth_date or '<span class="empty-value">未设置</span>'|safe }}</td>
+                        <td>{{ student.address or '<span class="empty-value">未设置</span>'|safe }}</td>
                         {% if session.role == 'admin' %}
-                        <td>{{ student.created_by_name or '未知' }}</td>
+                        <td>{{ student.created_by_name or '<span class="empty-value">未知</span>'|safe }}</td>
                         {% endif %}
-                        <td style="white-space: nowrap;">
+                        <td class="fixed-column" style="text-align: center;">
                             <div class="btn-group">
                                 <a href="{{ url_for('edit_student', student_id=student.id) }}" class="btn btn-sm btn-primary">编辑</a>
                                 <a href="{{ url_for('student_grades', student_id=student.id) }}" class="btn btn-sm btn-info">成绩</a>

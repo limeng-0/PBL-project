@@ -62,9 +62,9 @@
                         <td>{{ grade.credits or '未设置' }}</td>
                         <td>{{ grade.semester }}</td>
                         <td>
-                            {% if grade.grade %}
-                                <span class="{% if grade.grade >= 90 %}text-success{% elif grade.grade >= 80 %}text-primary{% elif grade.grade >= 70 %}text-info{% elif grade.grade >= 60 %}text-warning{% else %}text-danger{% endif %}">
-                                    {{ grade.grade }}
+                            {% if grade.score %}
+                                <span class="{% if grade.score >= 90 %}text-success{% elif grade.score >= 80 %}text-primary{% elif grade.score >= 70 %}text-info{% elif grade.score >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                                    {{ grade.score }}
                                 </span>
                             {% else %}
                                 <span class="text-muted">未录入</span>

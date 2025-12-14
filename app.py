@@ -86,11 +86,24 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id INTEGER,
         course_id INTEGER,
-        grade REAL,
         semester TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (student_id) REFERENCES students (id),
         FOREIGN KEY (course_id) REFERENCES courses (id)
+    )
+    """)
+
+    # 成绩表
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS grades (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        enrollment_id INTEGER,
+        score REAL NOT NULL,
+        teacher_id INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (enrollment_id) REFERENCES enrollments (id),
+        FOREIGN KEY (teacher_id) REFERENCES users (id)
     )
     """)
 
@@ -962,17 +975,251 @@ def student_grades(student_id):
         flash("您没有权限查看此学生成绩")
         return redirect(url_for("students"))
 
-    # 获取学生成绩
-    grades = conn.execute("""
-        SELECT e.*, c.name as course_name, c.code, c.credits
+    # 获取学生成绩（包括没有成绩的选课记录）
+    enrollments = conn.execute("""
+        SELECT e.*, c.name as course_name, c.code, c.credits, g.score
         FROM enrollments e
         JOIN courses c ON e.course_id = c.id
+        LEFT JOIN grades g ON e.id = g.enrollment_id
         WHERE e.student_id = ?
         ORDER BY e.semester DESC
     """, (student_id,)).fetchall()
 
     conn.close()
-    return render_template("students/grades.html", student=student, grades=grades)
+    return render_template("students/grades.html", student=student, grades=enrollments)
+
+# 成绩管理
+@app.route("/grades")
+@login_required
+def grades():
+    conn = get_db_connection()
+
+    # 获取筛选条件
+    student_id = request.args.get('student_id')
+    course_id = request.args.get('course_id')
+    semester = request.args.get('semester')
+
+    # 构建查询
+    query = """
+        SELECT g.id, s.name as student_name, s.student_id, 
+               c.name as course_name, e.semester, g.score, 
+               g.created_at, u.username as teacher_name
+        FROM grades g
+        JOIN enrollments e ON g.enrollment_id = e.id
+        JOIN students s ON e.student_id = s.id
+        JOIN courses c ON e.course_id = c.id
+        LEFT JOIN users u ON g.teacher_id = u.id
+    """
+    params = []
+
+    # 添加筛选条件
+    if student_id:
+        query += " WHERE s.id = ?"
+        params.append(student_id)
+
+    if course_id:
+        if not student_id:
+            query += " WHERE c.id = ?"
+        else:
+            query += " AND c.id = ?"
+        params.append(course_id)
+
+    if semester:
+        if not student_id and not course_id:
+            query += " WHERE e.semester = ?"
+        else:
+            query += " AND e.semester = ?"
+        params.append(semester)
+
+    # 权限检查：普通用户只能看到自己创建的学生成绩
+    if session.get("role") != "admin":
+        if not student_id and not course_id and not semester:
+            query += " WHERE s.created_by = ?"
+        else:
+            query += " AND s.created_by = ?"
+        params.append(session["user_id"])
+
+    query += " ORDER BY g.created_at DESC"
+
+    # 执行查询
+    grades = conn.execute(query, params).fetchall()
+
+    # 计算统计数据
+    total_grades = len(grades)
+    scores = [grade["score"] for grade in grades if grade["score"] is not None]
+    average_score = sum(scores) / len(scores) if scores else 0
+    max_score = max(scores) if scores else 0
+    min_score = min(scores) if scores else 0
+
+    # 获取学生列表
+    if session.get("role") == "admin":
+        students = conn.execute("SELECT id, name, student_id FROM students ORDER BY name").fetchall()
+    else:
+        students = conn.execute("SELECT id, name, student_id FROM students WHERE created_by = ? ORDER BY name", 
+                               (session["user_id"],)).fetchall()
+
+    # 获取课程列表
+    courses = conn.execute("SELECT id, name FROM courses ORDER BY name").fetchall()
+
+    conn.close()
+
+    return render_template("grades/index.html", 
+                          grades=grades, 
+                          total_grades=total_grades,
+                          average_score=average_score,
+                          max_score=max_score,
+                          min_score=min_score,
+                          students=students,
+                          courses=courses)
+
+# 创建成绩
+@app.route("/grades/create", methods=["GET", "POST"])
+@login_required
+def create_grade():
+    conn = get_db_connection()
+
+    if request.method == "POST":
+        student_id = request.form["student_id"]
+        course_id = request.form["course_id"]
+        semester = request.form["semester"]
+        score = float(request.form["grade"])
+
+        # 检查是否已存在相同的选课记录
+        enrollment = conn.execute("""
+            SELECT * FROM enrollments
+            WHERE student_id = ? AND course_id = ? AND semester = ?
+        """, (student_id, course_id, semester)).fetchone()
+
+        if not enrollment:
+            # 创建选课记录
+            cursor = conn.execute("""
+                INSERT INTO enrollments (student_id, course_id, semester)
+                VALUES (?, ?, ?)
+            """, (student_id, course_id, semester))
+            enrollment_id = cursor.lastrowid
+        else:
+            enrollment_id = enrollment["id"]
+
+        # 检查是否已存在成绩记录
+        existing_grade = conn.execute("""
+            SELECT * FROM grades WHERE enrollment_id = ?
+        """, (enrollment_id,)).fetchone()
+
+        if existing_grade:
+            # 更新现有记录
+            conn.execute("""
+                UPDATE grades SET score = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE enrollment_id = ?
+            """, (score, enrollment_id))
+            flash("成绩更新成功")
+        else:
+            # 创建新成绩记录
+            conn.execute("""
+                INSERT INTO grades (enrollment_id, score, teacher_id)
+                VALUES (?, ?, ?)
+            """, (enrollment_id, score, session["user_id"]))
+            flash("成绩录入成功")
+
+        conn.commit()
+        conn.close()
+        return redirect(url_for("grades"))
+
+    # 获取学生和课程列表
+    if session.get("role") == "admin":
+        students = conn.execute("SELECT id, name, student_id FROM students ORDER BY name").fetchall()
+    else:
+        students = conn.execute("SELECT id, name, student_id FROM students WHERE created_by = ? ORDER BY name",
+                               (session["user_id"],)).fetchall()
+
+    courses = conn.execute("SELECT id, name FROM courses ORDER BY name").fetchall()
+    conn.close()
+
+    return render_template("grades/create.html", students=students, courses=courses)
+
+# 编辑成绩
+@app.route("/grades/<int:grade_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_grade(grade_id):
+    conn = get_db_connection()
+
+    # 获取成绩记录
+    grade = conn.execute("""
+        SELECT g.*, e.student_id, e.course_id, e.semester, 
+               s.name as student_name, s.student_id as student_number, 
+               c.name as course_name, c.code
+        FROM grades g
+        JOIN enrollments e ON g.enrollment_id = e.id
+        JOIN students s ON e.student_id = s.id
+        JOIN courses c ON e.course_id = c.id
+        WHERE g.id = ?
+    """, (grade_id,)).fetchone()
+
+    # 权限检查：普通用户只能编辑自己创建的学生成绩
+    if session.get("role") != "admin":
+        student = conn.execute("SELECT created_by FROM students WHERE id = ?",
+                              (grade["student_id"],)).fetchone()
+        if student["created_by"] != session["user_id"]:
+            flash("您没有权限编辑此成绩记录")
+            return redirect(url_for("grades"))
+
+    if request.method == "POST":
+        new_score = float(request.form["grade"])
+
+        conn.execute("""
+            UPDATE grades SET score = ?, updated_at = CURRENT_TIMESTAMP 
+            WHERE id = ?
+        """, (new_score, grade_id))
+        conn.commit()
+        flash("成绩更新成功")
+        return redirect(url_for("grades"))
+
+    conn.close()
+    return render_template("grades/edit.html", grade=grade)
+
+# 删除成绩
+@app.route("/grades/<int:grade_id>/delete", methods=["POST"])
+@login_required
+def delete_grade(grade_id):
+    conn = get_db_connection()
+
+    # 获取成绩记录
+    grade = conn.execute("""
+        SELECT g.*, e.student_id, s.created_by as student_creator
+        FROM grades g
+        JOIN enrollments e ON g.enrollment_id = e.id
+        JOIN students s ON e.student_id = s.id
+        WHERE g.id = ?
+    """, (grade_id,)).fetchone()
+
+    # 权限检查：普通用户只能删除自己创建的学生成绩
+    if session.get("role") != "admin" and grade["student_creator"] != session["user_id"]:
+        flash("您没有权限删除此成绩记录")
+        return redirect(url_for("grades"))
+
+    conn.execute("DELETE FROM grades WHERE id = ?", (grade_id,))
+    conn.commit()
+    conn.close()
+    flash("成绩删除成功")
+    return redirect(url_for("grades"))
+
+# 批量导入成绩
+@app.route("/grades/import", methods=["GET", "POST"])
+@login_required
+def import_grades():
+    if request.method == "POST":
+        # 这里应该实现文件上传和解析逻辑
+        flash("批量导入功能正在开发中")
+        return redirect(url_for("grades"))
+
+    return render_template("grades/import.html")
+
+# 导出成绩
+@app.route("/grades/export")
+@login_required
+def export_grades():
+    # 这里应该实现导出逻辑
+    flash("导出功能正在开发中")
+    return redirect(url_for("grades"))
 
 if __name__ == "__main__":
     init_db()  # 初始化数据库

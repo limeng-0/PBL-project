@@ -326,6 +326,13 @@
                                         选课管理
                                     </a>
                                 </li>
+
+                                <li class="nav-item">
+                                    <a class="nav-link {% if 'grades' in request.endpoint %}active{% endif %}" href="{{ url_for('grades') }}">
+                                        <i class="fas fa-chart-line"></i>
+                                        成绩管理
+                                    </a>
+                                </li>
                             </ul>
                         </div>
 

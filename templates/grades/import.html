@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}批量导入成绩 - 学生信息管理系统{% endblock %}
+
+{% block header %}批量导入成绩{% endblock %}
+
+{% block actions %}
+<a href="{{ url_for('grades') }}" class="btn btn-secondary">返回列表</a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">批量导入成绩</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <h5>导入说明：</h5>
+            <p>请按照以下格式准备Excel文件：</p>
+            <ul>
+                <li>第一行：表头（学号、姓名、课程代码、课程名称、学期、成绩）</li>
+                <li>数据行：每行对应一条成绩记录</li>
+                <li>学号：必须与系统中已存在的学生学号一致</li>
+                <li>课程代码：必须与系统中已存在的课程代码一致</li>
+                <li>学期：格式为"YYYY-YYYY-X"，如"2023-2024-1"表示2023-2024学年第一学期</li>
+                <li>成绩：0-100之间的数字</li>
+            </ul>
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="file" class="form-label">选择Excel文件</label>
+                <input type="file" class="form-control" id="file" name="file" accept=".xlsx,.xls" required>
+            </div>
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">上传并导入</button>
+            </div>
+        </form>
+
+        <div class="mt-4">
+            <h5>模板下载</h5>
+            <p>您可以下载以下模板文件，按照格式填写后上传：</p>
+            <a href="#" class="btn btn-outline-primary">下载成绩导入模板</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
