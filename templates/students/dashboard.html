@@ -149,11 +149,11 @@
         <div class="card dashboard-card shadow h-100 stat-primary">
             <div class="card-body stat-card">
                 <div class="card-icon">
-                    <i class="fas fa-users"></i>
+                    <i class="fas fa-book"></i>
                 </div>
                 <div class="stat-info">
-                    <h3>{{ student_count }}</h3>
-                    <p>我的学生</p>
+                    <h3>{{ course_count }}</h3>
+                    <p>可选课程</p>
                 </div>
             </div>
         </div>
@@ -163,11 +163,11 @@
         <div class="card dashboard-card shadow h-100 stat-info">
             <div class="card-body stat-card">
                 <div class="card-icon">
-                    <i class="fas fa-book-open"></i>
+                    <i class="fas fa-bookmark"></i>
                 </div>
                 <div class="stat-info">
-                    <h3>{{ enrollment_count }}</h3>
-                    <p>选课记录</p>
+                    <h3>{{ my_selections_count }}</h3>
+                    <p>已选课程</p>
                 </div>
             </div>
         </div>
@@ -181,7 +181,7 @@
                 </div>
                 <div class="stat-info">
                     <h3>{{ average_grade }}</h3>
-                    <p>平均成绩</p>
+                    <p>我的成绩</p>
                 </div>
             </div>
         </div>
@@ -191,11 +191,11 @@
         <div class="card dashboard-card shadow h-100 stat-warning">
             <div class="card-body stat-card">
                 <div class="card-icon">
-                    <i class="fas fa-exclamation-triangle"></i>
+                    <i class="fas fa-clock"></i>
                 </div>
                 <div class="stat-info">
-                    <h3>{{ pending_grades }}</h3>
-                    <p>待录入成绩</p>
+                    <h3>{{ ungraded_courses }}</h3>
+                    <p>待出成绩课程</p>
                 </div>
             </div>
         </div>

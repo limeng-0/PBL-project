@@ -25,6 +25,36 @@ def init_db():
         cursor.execute("ALTER TABLE students ADD COLUMN avatar TEXT")
         conn.commit()
         print("已添加avatar字段到students表")
+    
+    # 检查courses表是否有major_id字段，如果没有则添加
+    cursor.execute("PRAGMA table_info(courses)")
+    columns = [column[1] for column in cursor.fetchall()]
+
+    if 'major_id' not in columns:
+        cursor.execute("ALTER TABLE courses ADD COLUMN major_id INTEGER")
+        conn.commit()
+        print("已添加major_id字段到courses表")
+    
+    # 检查并添加其他新字段
+    if 'teacher' not in columns:
+        cursor.execute("ALTER TABLE courses ADD COLUMN teacher TEXT")
+        conn.commit()
+        print("已添加teacher字段到courses表")
+    
+    if 'class_time' not in columns:
+        cursor.execute("ALTER TABLE courses ADD COLUMN class_time TEXT")
+        conn.commit()
+        print("已添加class_time字段到courses表")
+    
+    if 'location' not in columns:
+        cursor.execute("ALTER TABLE courses ADD COLUMN location TEXT")
+        conn.commit()
+        print("已添加location字段到courses表")
+    
+    if 'max_students' not in columns:
+        cursor.execute("ALTER TABLE courses ADD COLUMN max_students INTEGER DEFAULT 50")
+        conn.commit()
+        print("已添加max_students字段到courses表")
 
     # 用户表
     cursor.execute("""
@@ -95,7 +125,13 @@ def init_db():
         name TEXT NOT NULL,
         description TEXT,
         credits INTEGER,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        major_id INTEGER,
+        teacher TEXT,
+        class_time TEXT,
+        location TEXT,
+        max_students INTEGER DEFAULT 50,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (major_id) REFERENCES majors (id)
     )
     """)
 
@@ -467,13 +503,122 @@ def change_password():
 @app.route("/browse_courses")
 @login_required
 def browse_courses():
-    return render_template("students/browse_courses.html")
+    conn = get_db_connection()
+    
+    # 获取用户信息
+    user = conn.execute("SELECT * FROM users WHERE username = ?",
+                      (session.get("username"),)).fetchone()
+    
+    if not user:
+        conn.close()
+        flash("无法获取用户信息")
+        return redirect(url_for("dashboard"))
+    
+    # 获取学生记录ID
+    student_record_id = user["student_record_id"] if user["student_record_id"] else None
+    
+    # 如果没有student_record_id，尝试根据学号查找
+    if not student_record_id and user["student_id"]:
+        student = conn.execute("SELECT * FROM students WHERE student_id = ?",
+                             (user["student_id"],)).fetchone()
+        if student:
+            student_record_id = student["id"]
+            # 更新用户表
+            conn.execute("UPDATE users SET student_record_id = ? WHERE id = ?",
+                        (student_record_id, user["id"]))
+            conn.commit()
+    
+    # 获取所有专业
+    majors = conn.execute("SELECT * FROM majors").fetchall()
+    
+    # 获取查询参数
+    search = request.args.get('search', '')
+    credit = request.args.get('credit', '')
+    
+    # 构建查询语句
+    query = "SELECT * FROM courses WHERE 1=1"
+    params = []
+    
+    # 添加搜索条件
+    if search:
+        query += " AND (name LIKE ? OR code LIKE ?)"
+        params.extend([f'%{search}%', f'%{search}%'])
+    
+    # 添加学分筛选条件
+    if credit:
+        query += " AND credits = ?"
+        params.append(credit)
+    
+    # 执行查询
+    courses = conn.execute(query, params).fetchall()
+    
+    # 获取每门课程的已选人数
+    enroll_counts = {}
+    for course in courses:
+        count = conn.execute("SELECT COUNT(*) as count FROM enrollments WHERE course_id = ?",
+                           (course["id"],)).fetchone()["count"]
+        enroll_counts[course["id"]] = count
+    
+    # 获取该学生已选的课程ID列表
+    selected_course_ids = []
+    if student_record_id:
+        selected_courses = conn.execute("SELECT course_id FROM enrollments WHERE student_id = ?",
+                                      (student_record_id,)).fetchall()
+        selected_course_ids = [course["course_id"] for course in selected_courses]
+    
+    conn.close()
+    
+    return render_template("students/browse_courses.html", 
+                         courses=courses, 
+                         majors=majors,
+                         enroll_counts=enroll_counts,
+                         selected_course_ids=selected_course_ids)
 
 # 我的选课
 @app.route("/my_selections")
 @login_required
 def my_selections():
-    return render_template("students/my_selections.html")
+    conn = get_db_connection()
+    
+    # 获取用户信息
+    user = conn.execute("SELECT * FROM users WHERE username = ?",
+                      (session.get("username"),)).fetchone()
+    
+    if not user:
+        conn.close()
+        flash("无法获取用户信息")
+        return redirect(url_for("dashboard"))
+    
+    # 获取学生记录ID
+    student_record_id = user["student_record_id"] if user["student_record_id"] else None
+    
+    # 如果没有student_record_id，尝试根据学号查找
+    if not student_record_id and user["student_id"]:
+        student = conn.execute("SELECT * FROM students WHERE student_id = ?",
+                             (user["student_id"],)).fetchone()
+        if student:
+            student_record_id = student["id"]
+            # 更新用户表
+            conn.execute("UPDATE users SET student_record_id = ? WHERE id = ?",
+                        (student_record_id, user["id"]))
+            conn.commit()
+    
+    # 获取该学生已选的课程
+    enrollments = []
+    if student_record_id:
+        enrollments = conn.execute("""
+            SELECT e.id as enrollment_id, c.id as course_id, c.code, c.name, c.description, c.credits,
+                   e.semester, g.score
+            FROM enrollments e
+            JOIN courses c ON e.course_id = c.id
+            LEFT JOIN grades g ON e.id = g.enrollment_id
+            WHERE e.student_id = ?
+            ORDER BY e.semester DESC
+        """, (student_record_id,)).fetchall()
+    
+    conn.close()
+    
+    return render_template("students/my_selections.html", enrollments=enrollments)
 
 # 我的成绩
 @app.route("/my_grades")
@@ -512,6 +657,9 @@ def students_dashboard():
 
     # 学生仪表盘数据
     if student_record_id:
+        # 获取所有课程数量
+        course_count = conn.execute("SELECT COUNT(*) as count FROM courses").fetchone()["count"]
+        
         # 获取该学生的选课记录数
         enrollment_count = conn.execute("""
             SELECT COUNT(*) as count
@@ -556,6 +704,7 @@ def students_dashboard():
         """, (student_record_id,)).fetchone()
     else:
         # 如果没有学生记录，设置默认值
+        course_count = conn.execute("SELECT COUNT(*) as count FROM courses").fetchone()["count"]
         enrollment_count = 0
         average_grade = "0.00"
         graded_courses = 0
@@ -566,7 +715,8 @@ def students_dashboard():
 
     return render_template("students/dashboard.html",
                           student=student,
-                          enrollment_count=enrollment_count,
+                          course_count=course_count,
+                          my_selections_count=enrollment_count,
                           average_grade=average_grade,
                           graded_courses=graded_courses,
                           ungraded_courses=ungraded_courses,
@@ -1042,8 +1192,16 @@ def delete_class(class_id):
 def courses():
     conn = get_db_connection()
     courses = conn.execute("SELECT * FROM courses ORDER BY id ASC").fetchall()
+    
+    # 获取每门课程的已选人数
+    enroll_counts = {}
+    for course in courses:
+        count = conn.execute("SELECT COUNT(*) as count FROM enrollments WHERE course_id = ?",
+                           (course["id"],)).fetchone()["count"]
+        enroll_counts[course["id"]] = count
+    
     conn.close()
-    return render_template("courses/index.html", courses=courses)
+    return render_template("courses/index.html", courses=courses, enroll_counts=enroll_counts)
 
 # 创建课程
 @app.route("/courses/create", methods=["GET", "POST"])
@@ -1053,6 +1211,10 @@ def create_course():
     if request.method == "POST":
         code = request.form["code"]
         name = request.form["name"]
+        teacher = request.form.get("teacher")
+        class_time = request.form.get("class_time")
+        location = request.form.get("location")
+        max_students = request.form.get("max_students", "50")
         description = request.form.get("description")
         credits = request.form.get("credits")
 
