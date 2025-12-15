@@ -608,6 +608,7 @@ def my_selections():
     if student_record_id:
         enrollments = conn.execute("""
             SELECT e.id as enrollment_id, c.id as course_id, c.code, c.name, c.description, c.credits,
+                   c.teacher, c.class_time, c.location, c.max_students,
                    e.semester, g.score
             FROM enrollments e
             JOIN courses c ON e.course_id = c.id
@@ -1243,12 +1244,15 @@ def edit_course(course_id):
     if request.method == "POST":
         code = request.form["code"]
         name = request.form["name"]
+        teacher = request.form.get("teacher")
+        class_time = request.form.get("class_time")
+        location = request.form.get("location")
         description = request.form.get("description")
         credits = request.form.get("credits")
 
         try:
-            conn.execute("UPDATE courses SET code = ?, name = ?, description = ?, credits = ? WHERE id = ?", 
-                        (code, name, description, credits, course_id))
+            conn.execute("UPDATE courses SET code = ?, name = ?, teacher = ?, class_time = ?, location = ?, description = ?, credits = ? WHERE id = ?", 
+                        (code, name, teacher, class_time, location, description, credits, course_id))
             conn.commit()
             flash("课程信息更新成功")
             return redirect(url_for("courses"))
@@ -1308,6 +1312,143 @@ def enrollments():
 
     conn.close()
     return render_template("enrollments/index.html", enrollments=enrollments)
+
+# 学生选课AJAX接口
+@app.route("/api/enroll_course", methods=["POST"])
+@csrf.exempt  # 免除CSRF保护
+@login_required
+def enroll_course():
+    conn = get_db_connection()
+
+    try:
+        # 获取课程ID
+        if request.is_json:
+            data = request.get_json()
+            course_id = data.get('course_id')
+        else:
+            course_id = request.args.get('course_id')
+
+        if not course_id:
+            conn.close()
+            return jsonify({"success": False, "message": "缺少课程ID"})
+
+        # 获取当前登录用户信息
+        user = conn.execute("SELECT * FROM users WHERE username = ?",
+                          (session.get("username"),)).fetchone()
+
+        if not user:
+            conn.close()
+            return jsonify({"success": False, "message": "无法获取用户信息"})
+
+        # 获取学生记录ID
+        student_record_id = user["student_record_id"]
+        if not student_record_id and user["student_id"]:
+            student = conn.execute("SELECT * FROM students WHERE student_id = ?",
+                                 (user["student_id"],)).fetchone()
+            if student:
+                student_record_id = student["id"]
+                # 更新用户表
+                conn.execute("UPDATE users SET student_record_id = ? WHERE id = ?",
+                            (student_record_id, user["id"]))
+                conn.commit()
+
+        if not student_record_id:
+            conn.close()
+            return jsonify({"success": False, "message": "无法找到学生记录"})
+
+        # 获取当前学期
+        current_semester = "2023-2024学年第一学期"  # 这里应该从系统设置或配置中获取
+
+        # 检查是否已存在相同的选课记录
+        existing = conn.execute("""
+            SELECT * FROM enrollments
+            WHERE student_id = ? AND course_id = ? AND semester = ?
+        """, (student_record_id, course_id, current_semester)).fetchone()
+
+        if existing:
+            conn.close()
+            return jsonify({"success": False, "message": "您已选择此课程"})
+
+        # 检查课程是否已满员
+        course = conn.execute("SELECT * FROM courses WHERE id = ?", (course_id,)).fetchone()
+        if course:
+            enrolled_count = conn.execute("SELECT COUNT(*) as count FROM enrollments WHERE course_id = ?",
+                                       (course_id,)).fetchone()["count"]
+            max_students = course["max_students"] if course["max_students"] else 50
+
+            if enrolled_count >= max_students:
+                conn.close()
+                return jsonify({"success": False, "message": "课程已满员"})
+
+        # 创建选课记录
+        conn.execute("""
+            INSERT INTO enrollments (student_id, course_id, semester)
+            VALUES (?, ?, ?)
+        """, (student_record_id, course_id, current_semester))
+        conn.commit()
+        conn.close()
+
+        return jsonify({"success": True, "message": "选课成功"})
+    except Exception as e:
+        conn.close()
+        return jsonify({"success": False, "message": f"选课过程中发生错误: {str(e)}"})
+
+# 学生退课AJAX接口
+@app.route("/api/drop_course", methods=["POST"])
+@csrf.exempt  # 免除CSRF保护
+@login_required
+def drop_course():
+    conn = get_db_connection()
+
+    try:
+        # 获取选课记录ID
+        if request.is_json:
+            data = request.get_json()
+            enrollment_id = data.get('enrollment_id')
+        else:
+            enrollment_id = request.args.get('enrollment_id')
+
+        if not enrollment_id:
+            conn.close()
+            return jsonify({"success": False, "message": "缺少选课记录ID"})
+
+        # 获取当前登录用户信息
+        user = conn.execute("SELECT * FROM users WHERE username = ?",
+                          (session.get("username"),)).fetchone()
+
+        if not user:
+            conn.close()
+            return jsonify({"success": False, "message": "无法获取用户信息"})
+
+        # 获取学生记录ID
+        student_record_id = user["student_record_id"]
+        if not student_record_id and user["student_id"]:
+            student = conn.execute("SELECT * FROM students WHERE student_id = ?",
+                                 (user["student_id"],)).fetchone()
+            if student:
+                student_record_id = student["id"]
+
+        # 验证选课记录是否属于当前学生
+        enrollment = conn.execute("""
+            SELECT e.*, c.name as course_name
+            FROM enrollments e
+            JOIN courses c ON e.course_id = c.id
+            WHERE e.id = ? AND e.student_id = ?
+        """, (enrollment_id, student_record_id)).fetchone()
+
+        if not enrollment:
+            conn.close()
+            return jsonify({"success": False, "message": "找不到选课记录或无权限操作"})
+
+        # 删除选课记录
+        conn.execute("DELETE FROM enrollments WHERE id = ?", (enrollment_id,))
+        conn.commit()
+        conn.close()
+
+        return jsonify({"success": True, "message": "退课成功"})
+    except Exception as e:
+        conn.close()
+        return jsonify({"success": False, "message": f"退课过程中发生错误: {str(e)}"})
 
 # 创建选课记录
 @app.route("/enrollments/create", methods=["GET", "POST"])
