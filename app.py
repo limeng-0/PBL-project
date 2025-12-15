@@ -990,6 +990,7 @@ def students():
 # 创建学生信息
 @app.route("/students/create", methods=["GET", "POST"])
 @login_required
+@admin_required
 def create_student():
     conn = get_db_connection()
 
@@ -1317,8 +1318,8 @@ def create_course():
 
         conn = get_db_connection()
         try:
-            conn.execute("INSERT INTO courses (code, name, description, credits) VALUES (?, ?, ?, ?)", 
-                        (code, name, description, credits))
+            conn.execute("INSERT INTO courses (code, name, teacher, class_time, location, max_students, description, credits) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
+                        (code, name, teacher, class_time, location, max_students, description, credits))
             conn.commit()
             flash("课程创建成功")
             return redirect(url_for("courses"))
@@ -1780,7 +1781,33 @@ def create_grade():
         student_id = request.form["student_id"]
         course_id = request.form["course_id"]
         semester = request.form["semester"]
-        score = float(request.form["grade"])
+
+        # 验证成绩输入
+        try:
+            score = float(request.form["grade"])
+            if score < 0 or score > 100:
+                flash("成绩必须在0-100之间")
+                return redirect(request.url)
+        except ValueError:
+            flash("请输入有效的成绩数字")
+            return redirect(request.url)
+
+        # 检查学生是否存在
+        student = conn.execute("SELECT id, created_by FROM students WHERE id = ?", (student_id,)).fetchone()
+        if not student:
+            flash("所选学生不存在")
+            return redirect(request.url)
+
+        # 检查课程是否存在
+        course = conn.execute("SELECT id FROM courses WHERE id = ?", (course_id,)).fetchone()
+        if not course:
+            flash("所选课程不存在")
+            return redirect(request.url)
+
+        # 权限检查：普通用户只能为自己创建的学生录入成绩
+        if session.get("role") != "admin" and student["created_by"] != session["user_id"]:
+            flash("您没有权限为该学生录入成绩")
+            return redirect(request.url)
 
         # 检查是否已存在相同的选课记录
         enrollment = conn.execute("""

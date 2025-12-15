@@ -31,7 +31,7 @@
                 <tbody>
                     {% for enrollment in enrollments %}
                     <tr>
-                        <td>{{ enrollment.id }}</td>
+                        <td>{{ loop.index }}</td>
                         <td>{{ enrollment.student_name }}</td>
                         <td>{{ enrollment.code }}</td>
                         <td>{{ enrollment.course_name }}</td>
