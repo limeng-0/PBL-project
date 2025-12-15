@@ -116,8 +116,6 @@
             </div>
         </div>
     </div>
-
-
 </div>
 
 <!-- 成绩列表 -->
@@ -127,9 +125,6 @@
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                 <h6 class="m-0 font-weight-bold">成绩详情</h6>
                 <div>
-                    <button class="btn btn-sm btn-outline-primary mr-2" id="printBtn">
-                        <i class="fas fa-print"></i> 打印
-                    </button>
                     <button class="btn btn-sm btn-outline-success" id="exportBtn">
                         <i class="fas fa-download"></i> 导出
                     </button>
@@ -261,12 +256,38 @@
 <script>
     // 成绩分布图表
     var gradeDistributionCtx = document.getElementById('gradeDistributionChart').getContext('2d');
+
+    // 计算成绩分布数据
+    var gradeDistribution = {
+        '90-100分': 0,
+        '80-89分': 0,
+        '70-79分': 0,
+        '60-69分': 0,
+        '60分以下': 0
+    };
+
+    {% if grades %}
+        {% for grade in grades %}
+            {% if grade.score >= 90 %}
+                gradeDistribution['90-100分'] += 1;
+            {% elif grade.score >= 80 %}
+                gradeDistribution['80-89分'] += 1;
+            {% elif grade.score >= 70 %}
+                gradeDistribution['70-79分'] += 1;
+            {% elif grade.score >= 60 %}
+                gradeDistribution['60-69分'] += 1;
+            {% else %}
+                gradeDistribution['60分以下'] += 1;
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
     var gradeDistributionChart = new Chart(gradeDistributionCtx, {
         type: 'pie',
         data: {
-            labels: ['90-100分', '80-89分', '70-79分', '60-69分', '60分以下'],
+            labels: Object.keys(gradeDistribution),
             datasets: [{
-                data: [2, 3, 1, 1, 0],
+                data: Object.values(gradeDistribution),
                 backgroundColor: [
                     '#4e73df',
                     '#1cc88a',
@@ -293,7 +314,5 @@
             }
         }
     });
-
-
 </script>
 {% endblock %}

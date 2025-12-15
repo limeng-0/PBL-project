@@ -710,12 +710,11 @@ def my_grades():
     if student_record_id:
         grades = conn.execute("""
             SELECT g.id as grade_id, c.code, c.name as course_name, c.credits,
-                   u.name as teacher_name, e.semester,
+                   c.teacher as teacher_name, e.semester,
                    g.score
             FROM grades g
             JOIN enrollments e ON g.enrollment_id = e.id
             JOIN courses c ON e.course_id = c.id
-            LEFT JOIN users u ON c.teacher = u.name
             WHERE e.student_id = ?
             ORDER BY c.code
         """, (student_record_id,)).fetchall()
