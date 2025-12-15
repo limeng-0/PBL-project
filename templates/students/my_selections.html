@@ -10,29 +10,6 @@
 
 
 {% block content %}
-<!-- 学期选择 -->
-<div class="card shadow mb-4">
-    <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold">学期选择</h6>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-3">
-                <select class="form-select" id="semester">
-                    <option value="2023-1" selected>2023-2024学年 第一学期</option>
-                    <option value="2023-2">2023-2024学年 第二学期</option>
-                    <option value="2022-1">2022-2023学年 第一学期</option>
-                    <option value="2022-2">2022-2023学年 第二学期</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <button class="btn btn-primary" id="filterBtn">
-                    <i class="fas fa-filter"></i> 筛选
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- 选课统计 -->
 <div class="row">
@@ -258,9 +235,6 @@
                                 <td>{{ enrollment.class_time if enrollment.class_time else "待定" }}</td>
                                 <td>{{ enrollment.location if enrollment.location else "待定" }}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-info">
-                                        <i class="fas fa-info-circle"></i> 详情
-                                    </button>
                                     <button class="btn btn-sm btn-danger" onclick="dropCourse({{ enrollment.enrollment_id }})">
                                         <i class="fas fa-times"></i> 退课
                                     </button>
@@ -292,7 +266,7 @@
     // 导出课程表
     document.getElementById('exportBtn').addEventListener('click', function() {
         // 获取课程表内容
-        const semester = document.getElementById('semester').value;
+        const semester = "当前学期";
         const table = document.querySelector('.card-body .table');
 
         // 创建一个新的表格，只包含课程表内容
@@ -414,12 +388,7 @@
         printWindow.document.close();
     });
 
-    // 筛选学期
-    document.getElementById('filterBtn').addEventListener('click', function() {
-        const semester = document.getElementById('semester').value;
-        // 这里可以添加筛选逻辑
-        alert('已切换到: ' + semester);
-    });
+
 
     // 退课功能
     function dropCourse(enrollmentId) {

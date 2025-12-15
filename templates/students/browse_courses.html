@@ -18,12 +18,27 @@
     <div class="card-body">
         <form method="GET" action="{{ url_for('browse_courses') }}">
             <div class="row">
-                <div class="col-md-5 mb-3">
-                    <label for="search" class="form-label">搜索课程</label>
-                    <input type="text" class="form-control" id="search" name="search" placeholder="输入课程名称或教师姓名" value="{{ request.args.get('search', '') }}">
+                <div class="col-md-3 mb-3">
+                    <label for="search" class="form-label">选择课程</label>
+                    <select class="form-select" id="search" name="search">
+                        <option value="">全部课程</option>
+                        {% for course in all_courses %}
+                        <option value="{{ course.name }}" {% if request.args.get('search') == course.name %}selected{% endif %}>{{ course.name }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
 
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
+                    <label for="teacher" class="form-label">教师姓名</label>
+                    <select class="form-select" id="teacher" name="teacher">
+                        <option value="">全部教师</option>
+                        {% for teacher in teachers %}
+                        <option value="{{ teacher }}" {% if request.args.get('teacher') == teacher %}selected{% endif %}>{{ teacher }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-3 mb-3">
                     <label for="credit" class="form-label">学分</label>
                     <select class="form-select" id="credit" name="credit">
                         <option value="">全部学分</option>
@@ -47,18 +62,8 @@
 <div class="row">
     <div class="col-xl-12">
         <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold">可选课程</h6>
-                <div class="dropdown no-arrow">
-                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
-                        <a class="dropdown-item" href="#">按学分排序</a>
-                        <a class="dropdown-item" href="#">按教师排序</a>
-                        <a class="dropdown-item" href="#">按时间排序</a>
-                    </div>
-                </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -107,22 +112,7 @@
     </div>
 </div>
 
-<!-- 分页 -->
-<div class="row justify-content-center">
-    <nav aria-label="Page navigation">
-        <ul class="pagination">
-            <li class="page-item disabled">
-                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">上一页</a>
-            </li>
-            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-            <li class="page-item"><a class="page-link" href="#">2</a></li>
-            <li class="page-item"><a class="page-link" href="#">3</a></li>
-            <li class="page-item">
-                <a class="page-link" href="#">下一页</a>
-            </li>
-        </ul>
-    </nav>
-</div>
+
 
 <!-- 课程详情模态框 -->
 <div class="modal fade" id="courseDetailModal1" tabindex="-1" aria-labelledby="courseDetailModalLabel1" aria-hidden="true">

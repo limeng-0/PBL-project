@@ -531,8 +531,56 @@ def browse_courses():
     # 获取所有专业
     majors = conn.execute("SELECT * FROM majors").fetchall()
     
+    # 获取所有课程
+    all_courses = conn.execute("SELECT DISTINCT id, name FROM courses ORDER BY name").fetchall()
+    
+    # 获取所有教师
+    teachers_query = conn.execute("SELECT DISTINCT teacher FROM courses WHERE teacher IS NOT NULL AND teacher != '' ORDER BY teacher").fetchall()
+    teachers = [teacher["teacher"] for teacher in teachers_query]
+    
+    # 打印调试信息
+    print(f"课程数量: {len(all_courses)}")
+    print(f"教师数量: {len(teachers)}")
+    if all_courses:
+        print(f"第一个课程: {all_courses[0]}")
+    if teachers:
+        print(f"第一个教师: {teachers[0]}")
+    
+    # 检查数据库中是否有课程数据
+    total_courses = conn.execute("SELECT COUNT(*) as count FROM courses").fetchone()["count"]
+    print(f"数据库中总课程数: {total_courses}")
+    
+    # 检查是否有教师数据
+    courses_with_teacher = conn.execute("SELECT COUNT(*) as count FROM courses WHERE teacher IS NOT NULL AND teacher != ''").fetchone()["count"]
+    print(f"有教师数据的课程数: {courses_with_teacher}")
+    
+    # 如果数据库中没有课程数据，添加一些示例数据
+    if total_courses == 0:
+        print("添加示例课程数据...")
+        sample_courses = [
+            ("CS101", "计算机科学导论", "张教授", "周一 8:00-10:00", "A101", 50, "计算机科学基础课程", 3),
+            ("CS102", "数据结构", "李教授", "周二 14:00-16:00", "B203", 40, "数据结构与算法", 4),
+            ("CS103", "操作系统", "王教授", "周三 10:00-12:00", "C305", 30, "操作系统原理与实践", 4),
+            ("CS104", "计算机网络", "赵教授", "周四 14:00-16:00", "D201", 35, "计算机网络基础", 3),
+            ("CS105", "数据库系统", "刘教授", "周五 8:00-10:00", "E102", 45, "数据库原理与应用", 3)
+        ]
+        
+        for course in sample_courses:
+            conn.execute("""
+                INSERT INTO courses (code, name, teacher, class_time, location, max_students, description, credits) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, course)
+        conn.commit()
+        print("示例数据添加完成")
+        
+        # 重新获取课程和教师数据
+        all_courses = conn.execute("SELECT DISTINCT id, name FROM courses ORDER BY name").fetchall()
+        teachers_query = conn.execute("SELECT DISTINCT teacher FROM courses WHERE teacher IS NOT NULL AND teacher != '' ORDER BY teacher").fetchall()
+        teachers = [teacher["teacher"] for teacher in teachers_query]
+    
     # 获取查询参数
     search = request.args.get('search', '')
+    teacher = request.args.get('teacher', '')
     credit = request.args.get('credit', '')
     
     # 构建查询语句
@@ -543,6 +591,11 @@ def browse_courses():
     if search:
         query += " AND (name LIKE ? OR code LIKE ?)"
         params.extend([f'%{search}%', f'%{search}%'])
+    
+    # 添加教师搜索条件
+    if teacher:
+        query += " AND teacher LIKE ?"
+        params.append(f'%{teacher}%')
     
     # 添加学分筛选条件
     if credit:
@@ -571,6 +624,8 @@ def browse_courses():
     return render_template("students/browse_courses.html", 
                          courses=courses, 
                          majors=majors,
+                         all_courses=all_courses,
+                         teachers=teachers,
                          enroll_counts=enroll_counts,
                          selected_course_ids=selected_course_ids)
 
@@ -625,7 +680,49 @@ def my_selections():
 @app.route("/my_grades")
 @login_required
 def my_grades():
-    return render_template("students/my_grades.html")
+    conn = get_db_connection()
+
+    # 获取用户信息
+    user = conn.execute("SELECT * FROM users WHERE username = ?",
+                      (session.get("username"),)).fetchone()
+
+    if not user:
+        conn.close()
+        flash("无法获取用户信息")
+        return redirect(url_for("dashboard"))
+
+    # 获取学生记录ID
+    student_record_id = user["student_record_id"] if user["student_record_id"] else None
+
+    # 如果没有student_record_id，尝试根据学号查找
+    if not student_record_id and user["student_id"]:
+        student = conn.execute("SELECT * FROM students WHERE student_id = ?",
+                             (user["student_id"],)).fetchone()
+        if student:
+            student_record_id = student["id"]
+            # 更新用户表
+            conn.execute("UPDATE users SET student_record_id = ? WHERE id = ?",
+                        (student_record_id, user["id"]))
+            conn.commit()
+
+    # 获取学生成绩数据
+    grades = []
+    if student_record_id:
+        grades = conn.execute("""
+            SELECT g.id as grade_id, c.code, c.name as course_name, c.credits,
+                   u.name as teacher_name, e.semester,
+                   g.score
+            FROM grades g
+            JOIN enrollments e ON g.enrollment_id = e.id
+            JOIN courses c ON e.course_id = c.id
+            LEFT JOIN users u ON c.teacher = u.name
+            WHERE e.student_id = ?
+            ORDER BY c.code
+        """, (student_record_id,)).fetchall()
+
+    conn.close()
+
+    return render_template("students/my_grades.html", grades=grades)
 
 # 学生仪表盘
 @app.route("/students/dashboard")
