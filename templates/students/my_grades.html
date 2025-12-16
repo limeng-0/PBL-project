@@ -139,7 +139,6 @@
                                 <th>课程名称</th>
                                 <th>教师</th>
                                 <th>学分</th>
-                                <th>类型</th>
                                 <th>成绩</th>
                             </tr>
                         </thead>
@@ -151,15 +150,12 @@
                                     <td>{{ grade.course_name }}</td>
                                     <td>{{ grade.teacher_name or '未指定' }}</td>
                                     <td>{{ grade.credits }}</td>
-                                    <td>
-                                        <span class="badge bg-primary">必修</span>
-                                    </td>
                                     <td>{{ grade.score }}</td>
                                 </tr>
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="6" class="text-center">暂无成绩数据</td>
+                                    <td colspan="5" class="text-center">暂无成绩数据</td>
                                 </tr>
                             {% endif %}
                         </tbody>
@@ -200,10 +196,6 @@
                                     <tr>
                                         <td>学分</td>
                                         <td>{{ grade.credits }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>课程类型</td>
-                                        <td>必修</td>
                                     </tr>
                                     <tr>
                                         <td>学期</td>
