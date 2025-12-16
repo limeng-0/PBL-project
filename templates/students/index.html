@@ -6,7 +6,9 @@
 {% block header %}学生管理{% endblock %}
 
 {% block actions %}
+{% if session.role == 'admin' %}
 <a href="{{ url_for('create_student') }}" class="btn btn-primary">添加学生</a>
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -185,6 +187,7 @@
                                 <a href="{{ url_for('edit_student', student_id=student.id) }}" class="btn btn-sm btn-primary">编辑</a>
                                 <a href="{{ url_for('student_grades', student_id=student.id) }}" class="btn btn-sm btn-info">成绩</a>
                                 <form action="{{ url_for('delete_student', student_id=student.id) }}" method="post" style="display: inline;" onsubmit="return confirm('确定要删除此学生信息吗？');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="btn btn-sm btn-danger">删除</button>
                                 </form>
                             </div>

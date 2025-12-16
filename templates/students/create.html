@@ -19,6 +19,7 @@
                 </div>
                 {% endif %}
                 <form method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="student_id" class="form-label">学号</label>

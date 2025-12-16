@@ -10,29 +10,6 @@
 
 
 {% block content %}
-<!-- 学期选择 -->
-<div class="card shadow mb-4">
-    <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold">学期选择</h6>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-3">
-                <select class="form-select" id="semester">
-                    <option value="2023-1" selected>2023-2024学年 第一学期</option>
-                    <option value="2023-2">2023-2024学年 第二学期</option>
-                    <option value="2022-1">2022-2023学年 第一学期</option>
-                    <option value="2022-2">2022-2023学年 第二学期</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <button class="btn btn-primary" id="filterBtn">
-                    <i class="fas fa-filter"></i> 筛选
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- 成绩统计 -->
 <div class="row">
@@ -42,7 +19,13 @@
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">平均成绩</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">85.5</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {% if grades %}
+                                {{ "%.1f"|format(grades | map(attribute='score') | sum / grades | length) }}
+                            {% else %}
+                                0.0
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-chart-line fa-2x text-gray-300"></i>
@@ -58,7 +41,13 @@
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-success text-uppercase mb-1">最高分</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">96</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {% if grades %}
+                                {{ grades | map(attribute='score') | max }}
+                            {% else %}
+                                0
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-trophy fa-2x text-gray-300"></i>
@@ -74,7 +63,13 @@
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-info text-uppercase mb-1">最低分</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">72</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {% if grades %}
+                                {{ grades | map(attribute='score') | min }}
+                            {% else %}
+                                0
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-arrow-down fa-2x text-gray-300"></i>
@@ -90,7 +85,13 @@
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">总学分</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">18</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {% if grades %}
+                                {{ grades | map(attribute='credits') | sum }}
+                            {% else %}
+                                0
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-graduation-cap fa-2x text-gray-300"></i>
@@ -105,43 +106,12 @@
 <div class="row">
     <div class="col-xl-6 col-lg-6">
         <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold">成绩分布</h6>
-                <div class="dropdown no-arrow">
-                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
-                        <a class="dropdown-item" href="#">导出数据</a>
-                        <a class="dropdown-item" href="#">生成报告</a>
-                    </div>
-                </div>
             </div>
             <div class="card-body">
                 <div class="chart-area">
                     <canvas id="gradeDistributionChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-6 col-lg-6">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold">各科成绩</h6>
-                <div class="dropdown no-arrow">
-                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
-                        <a class="dropdown-item" href="#">导出数据</a>
-                        <a class="dropdown-item" href="#">生成报告</a>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="chart-area">
-                    <canvas id="courseGradesChart"></canvas>
                 </div>
             </div>
         </div>
@@ -155,9 +125,6 @@
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                 <h6 class="m-0 font-weight-bold">成绩详情</h6>
                 <div>
-                    <button class="btn btn-sm btn-outline-primary mr-2" id="printBtn">
-                        <i class="fas fa-print"></i> 打印
-                    </button>
                     <button class="btn btn-sm btn-outline-success" id="exportBtn">
                         <i class="fas fa-download"></i> 导出
                     </button>
@@ -172,127 +139,25 @@
                                 <th>课程名称</th>
                                 <th>教师</th>
                                 <th>学分</th>
-                                <th>类型</th>
-                                <th>平时成绩</th>
-                                <th>期末成绩</th>
-                                <th>总评成绩</th>
-                                <th>绩点</th>
-                                <th>操作</th>
+                                <th>成绩</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>CS101</td>
-                                <td>数据结构</td>
-                                <td>张教授</td>
-                                <td>3</td>
-                                <td><span class="badge bg-primary">必修</span></td>
-                                <td>88</td>
-                                <td>92</td>
-                                <td>90</td>
-                                <td>4.0</td>
-                                <td>
-                                    <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#gradeDetailModal1">
-                                        <i class="fas fa-info-circle"></i> 详情
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>CS102</td>
-                                <td>操作系统</td>
-                                <td>李教授</td>
-                                <td>3</td>
-                                <td><span class="badge bg-primary">必修</span></td>
-                                <td>85</td>
-                                <td>88</td>
-                                <td>87</td>
-                                <td>3.7</td>
-                                <td>
-                                    <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#gradeDetailModal2">
-                                        <i class="fas fa-info-circle"></i> 详情
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>CS103</td>
-                                <td>计算机网络</td>
-                                <td>王教授</td>
-                                <td>3</td>
-                                <td><span class="badge bg-primary">必修</span></td>
-                                <td>82</td>
-                                <td>85</td>
-                                <td>84</td>
-                                <td>3.3</td>
-                                <td>
-                                    <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#gradeDetailModal3">
-                                        <i class="fas fa-info-circle"></i> 详情
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>CS104</td>
-                                <td>数据库原理</td>
-                                <td>赵教授</td>
-                                <td>3</td>
-                                <td><span class="badge bg-primary">必修</span></td>
-                                <td>78</td>
-                                <td>82</td>
-                                <td>80</td>
-                                <td>3.0</td>
-                                <td>
-                                    <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#gradeDetailModal4">
-                                        <i class="fas fa-info-circle"></i> 详情
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>ENG101</td>
-                                <td>英语</td>
-                                <td>刘教授</td>
-                                <td>2</td>
-                                <td><span class="badge bg-primary">必修</span></td>
-                                <td>90</td>
-                                <td>88</td>
-                                <td>89</td>
-                                <td>3.7</td>
-                                <td>
-                                    <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#gradeDetailModal5">
-                                        <i class="fas fa-info-circle"></i> 详情
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>PE101</td>
-                                <td>体育</td>
-                                <td>陈教授</td>
-                                <td>1</td>
-                                <td><span class="badge bg-primary">必修</span></td>
-                                <td>85</td>
-                                <td>90</td>
-                                <td>88</td>
-                                <td>3.7</td>
-                                <td>
-                                    <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#gradeDetailModal6">
-                                        <i class="fas fa-info-circle"></i> 详情
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>CS201</td>
-                                <td>人工智能导论</td>
-                                <td>孙教授</td>
-                                <td>3</td>
-                                <td><span class="badge bg-success">选修</span></td>
-                                <td>75</td>
-                                <td>80</td>
-                                <td>78</td>
-                                <td>2.7</td>
-                                <td>
-                                    <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#gradeDetailModal7">
-                                        <i class="fas fa-info-circle"></i> 详情
-                                    </button>
-                                </td>
-                            </tr>
+                            {% if grades %}
+                                {% for grade in grades %}
+                                <tr>
+                                    <td>{{ grade.code }}</td>
+                                    <td>{{ grade.course_name }}</td>
+                                    <td>{{ grade.teacher_name or '未指定' }}</td>
+                                    <td>{{ grade.credits }}</td>
+                                    <td>{{ grade.score }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center">暂无成绩数据</td>
+                                </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -302,158 +167,78 @@
 </div>
 
 <!-- 成绩详情模态框 -->
-<div class="modal fade" id="gradeDetailModal1" tabindex="-1" aria-labelledby="gradeDetailModalLabel1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="gradeDetailModalLabel1">成绩详情 - 数据结构</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6>基本信息</h6>
-                        <table class="table table-sm">
-                            <tr>
-                                <td style="width: 120px;">课程代码</td>
-                                <td>CS101</td>
-                            </tr>
-                            <tr>
-                                <td>课程名称</td>
-                                <td>数据结构</td>
-                            </tr>
-                            <tr>
-                                <td>授课教师</td>
-                                <td>张教授</td>
-                            </tr>
-                            <tr>
-                                <td>学分</td>
-                                <td>3</td>
-                            </tr>
-                            <tr>
-                                <td>课程类型</td>
-                                <td>必修</td>
-                            </tr>
-                        </table>
+{% if grades %}
+    {% for grade in grades %}
+        <div class="modal fade" id="gradeDetailModal{{ grade.grade_id }}" tabindex="-1" aria-labelledby="gradeDetailModalLabel{{ grade.grade_id }}" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="gradeDetailModalLabel{{ grade.grade_id }}">成绩详情 - {{ grade.course_name }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="col-md-6">
-                        <h6>成绩组成</h6>
-                        <table class="table table-sm">
-                            <tr>
-                                <td style="width: 120px;">平时成绩</td>
-                                <td>88分 (40%)</td>
-                            </tr>
-                            <tr>
-                                <td>期末成绩</td>
-                                <td>92分 (60%)</td>
-                            </tr>
-                            <tr>
-                                <td>总评成绩</td>
-                                <td>90分</td>
-                            </tr>
-                            <tr>
-                                <td>绩点</td>
-                                <td>4.0</td>
-                            </tr>
-                            <tr>
-                                <td>等级</td>
-                                <td>优秀</td>
-                            </tr>
-                        </table>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>基本信息</h6>
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td style="width: 120px;">课程代码</td>
+                                        <td>{{ grade.code }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>课程名称</td>
+                                        <td>{{ grade.course_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>授课教师</td>
+                                        <td>{{ grade.teacher_name or '未指定' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>学分</td>
+                                        <td>{{ grade.credits }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>学期</td>
+                                        <td>{{ grade.semester }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>成绩信息</h6>
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td style="width: 120px;">成绩</td>
+                                        <td>{{ grade.score }}分</td>
+                                    </tr>
+                                    <tr>
+                                        <td>等级</td>
+                                        <td>
+                                            {% if grade.score >= 90 %}
+                                                优秀
+                                            {% elif grade.score >= 80 %}
+                                                良好
+                                            {% elif grade.score >= 70 %}
+                                                中等
+                                            {% elif grade.score >= 60 %}
+                                                及格
+                                            {% else %}
+                                                不及格
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
                     </div>
-                </div>
-
-                <div class="mt-4">
-                    <h6>平时成绩详情</h6>
-                    <div class="table-responsive">
-                        <table class="table table-sm table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>项目</th>
-                                    <th>分数</th>
-                                    <th>占比</th>
-                                    <th>备注</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>作业1</td>
-                                    <td>90</td>
-                                    <td>10%</td>
-                                    <td>数组与链表</td>
-                                </tr>
-                                <tr>
-                                    <td>作业2</td>
-                                    <td>85</td>
-                                    <td>10%</td>
-                                    <td>栈与队列</td>
-                                </tr>
-                                <tr>
-                                    <td>作业3</td>
-                                    <td>88</td>
-                                    <td>10%</td>
-                                    <td>树与图</td>
-                                </tr>
-                                <tr>
-                                    <td>期中测试</td>
-                                    <td>89</td>
-                                    <td>10%</td>
-                                    <td>排序与查找</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                        <button type="button" class="btn btn-primary">打印成绩单</button>
                     </div>
                 </div>
-
-                <div class="mt-4">
-                    <h6>期末考试详情</h6>
-                    <div class="table-responsive">
-                        <table class="table table-sm table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>题型</th>
-                                    <th>得分</th>
-                                    <th>总分</th>
-                                    <th>占比</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>选择题</td>
-                                    <td>18</td>
-                                    <td>20</td>
-                                    <td>20%</td>
-                                </tr>
-                                <tr>
-                                    <td>填空题</td>
-                                    <td>16</td>
-                                    <td>20</td>
-                                    <td>20%</td>
-                                </tr>
-                                <tr>
-                                    <td>简答题</td>
-                                    <td>26</td>
-                                    <td>30</td>
-                                    <td>30%</td>
-                                </tr>
-                                <tr>
-                                    <td>编程题</td>
-                                    <td>32</td>
-                                    <td>30</td>
-                                    <td>30%</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-                <button type="button" class="btn btn-primary">打印成绩单</button>
             </div>
         </div>
-    </div>
-</div>
+    {% endfor %}
+{% endif %}
 
 {% endblock %}
 
@@ -463,12 +248,38 @@
 <script>
     // 成绩分布图表
     var gradeDistributionCtx = document.getElementById('gradeDistributionChart').getContext('2d');
+
+    // 计算成绩分布数据
+    var gradeDistribution = {
+        '90-100分': 0,
+        '80-89分': 0,
+        '70-79分': 0,
+        '60-69分': 0,
+        '60分以下': 0
+    };
+
+    {% if grades %}
+        {% for grade in grades %}
+            {% if grade.score >= 90 %}
+                gradeDistribution['90-100分'] += 1;
+            {% elif grade.score >= 80 %}
+                gradeDistribution['80-89分'] += 1;
+            {% elif grade.score >= 70 %}
+                gradeDistribution['70-79分'] += 1;
+            {% elif grade.score >= 60 %}
+                gradeDistribution['60-69分'] += 1;
+            {% else %}
+                gradeDistribution['60分以下'] += 1;
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
     var gradeDistributionChart = new Chart(gradeDistributionCtx, {
         type: 'pie',
         data: {
-            labels: ['90-100分', '80-89分', '70-79分', '60-69分', '60分以下'],
+            labels: Object.keys(gradeDistribution),
             datasets: [{
-                data: [2, 3, 1, 1, 0],
+                data: Object.values(gradeDistribution),
                 backgroundColor: [
                     '#4e73df',
                     '#1cc88a',
@@ -491,33 +302,6 @@
             plugins: {
                 legend: {
                     position: 'bottom'
-                }
-            }
-        }
-    });
-
-    // 各科成绩图表
-    var courseGradesCtx = document.getElementById('courseGradesChart').getContext('2d');
-    var courseGradesChart = new Chart(courseGradesCtx, {
-        type: 'bar',
-        data: {
-            labels: ['数据结构', '操作系统', '计算机网络', '数据库原理', '英语', '体育', '人工智能导论'],
-            datasets: [{
-                label: '平时成绩',
-                data: [88, 85, 82, 78, 90, 85, 75],
-                backgroundColor: '#4e73df',
-            }, {
-                label: '期末成绩',
-                data: [92, 88, 85, 82, 88, 90, 80],
-                backgroundColor: '#1cc88a',
-            }],
-        },
-        options: {
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100
                 }
             }
         }

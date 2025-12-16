@@ -24,6 +24,10 @@
                         <th>ID</th>
                         <th>课程代码</th>
                         <th>课程名称</th>
+                        <th>教师</th>
+                        <th>时间</th>
+                        <th>地点</th>
+                        <th>人数</th>
                         <th>学分</th>
                         <th>描述</th>
                         <th>创建时间</th>
@@ -38,6 +42,13 @@
                         <td>{{ course.id }}</td>
                         <td>{{ course.code }}</td>
                         <td>{{ course.name }}</td>
+                        <td>{{ course.teacher or '未设置' }}</td>
+                        <td>{{ course.class_time or '未设置' }}</td>
+                        <td>{{ course.location or '未设置' }}</td>
+                        <td>
+                            {% set enrolled_count = enroll_counts[course.id] if enroll_counts and course.id in enroll_counts else 0 %}
+                            {{ enrolled_count }}/{{ course.max_students if course.max_students else 50 }}
+                        </td>
                         <td>{{ course.credits or '未设置' }}</td>
                         <td>{{ course.description or '无描述' }}</td>
                         <td>{{ course.created_at }}</td>
