@@ -125,9 +125,9 @@
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                 <h6 class="m-0 font-weight-bold">成绩详情</h6>
                 <div>
-                    <button class="btn btn-sm btn-outline-success" id="exportBtn">
-                        <i class="fas fa-download"></i> 导出
-                    </button>
+                    <a href="/print_grades" class="btn btn-sm btn-outline-success" target="_blank">
+                        <i class="fas fa-download"></i> 导出成绩单
+                    </a>
                 </div>
             </div>
             <div class="card-body">
@@ -306,5 +306,28 @@
             }
         }
     });
+
+    // 导出成绩功能
+    document.addEventListener('DOMContentLoaded', function() {
+        const exportBtn = document.getElementById('exportBtn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', function() {
+                // 显示加载状态
+                exportBtn.disabled = true;
+                exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 导出中...';
+
+                // 直接使用window.location.href进行下载
+                window.location.href = '/export_grades';
+
+                // 3秒后恢复按钮状态
+                setTimeout(function() {
+                    exportBtn.disabled = false;
+                    exportBtn.innerHTML = '<i class="fas fa-download"></i> 导出';
+                }, 3000);
+            });
+        }
+    });
+
+
 </script>
 {% endblock %}
