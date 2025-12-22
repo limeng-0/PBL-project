@@ -723,6 +723,134 @@ def my_grades():
 
     return render_template("students/my_grades.html", grades=grades)
 
+# 打印成绩页面
+@app.route("/print_grades")
+@login_required
+def print_grades():
+    conn = get_db_connection()
+
+    # 获取用户信息
+    user = conn.execute("SELECT * FROM users WHERE username = ?",
+                      (session.get("username"),)).fetchone()
+
+    if not user:
+        conn.close()
+        flash("无法获取用户信息")
+        return redirect(url_for("dashboard"))
+
+    # 获取学生记录ID
+    student_record_id = user["student_record_id"] if user["student_record_id"] else None
+
+    # 如果没有student_record_id，尝试根据学号查找
+    if not student_record_id and user["student_id"]:
+        student = conn.execute("SELECT * FROM students WHERE student_id = ?",
+                             (user["student_id"],)).fetchone()
+        if student:
+            student_record_id = student["id"]
+
+    # 获取学生成绩数据
+    grades = []
+    if student_record_id:
+        grades = conn.execute("""
+            SELECT c.code, c.name as course_name, c.credits,
+                   c.teacher as teacher_name, e.semester,
+                   g.score
+            FROM grades g
+            JOIN enrollments e ON g.enrollment_id = e.id
+            JOIN courses c ON e.course_id = c.id
+            WHERE e.student_id = ?
+            ORDER BY c.code
+        """, (student_record_id,)).fetchall()
+
+    conn.close()
+
+    return render_template("students/print_grades.html", user=user, grades=grades, now=datetime.now())
+
+# 导出成绩
+@app.route("/export_grades")
+@login_required
+def export_grades():
+    import csv
+    from flask import Response
+    from datetime import datetime
+
+    conn = get_db_connection()
+
+    # 获取用户信息
+    user = conn.execute("SELECT * FROM users WHERE username = ?",
+                      (session.get("username"),)).fetchone()
+
+    if not user:
+        conn.close()
+        flash("无法获取用户信息")
+        return redirect(url_for("dashboard"))
+
+    # 获取学生记录ID
+    student_record_id = user["student_record_id"] if user["student_record_id"] else None
+
+    # 如果没有student_record_id，尝试根据学号查找
+    if not student_record_id and user["student_id"]:
+        student = conn.execute("SELECT * FROM students WHERE student_id = ?",
+                             (user["student_id"],)).fetchone()
+        if student:
+            student_record_id = student["id"]
+
+    # 获取学生成绩数据
+    grades = []
+    if student_record_id:
+        grades = conn.execute("""
+            SELECT c.code, c.name as course_name, c.credits,
+                   c.teacher as teacher_name, e.semester,
+                   g.score
+            FROM grades g
+            JOIN enrollments e ON g.enrollment_id = e.id
+            JOIN courses c ON e.course_id = c.id
+            WHERE e.student_id = ?
+            ORDER BY c.code
+        """, (student_record_id,)).fetchall()
+
+    conn.close()
+
+    # 创建CSV内容
+    csv_data = []
+
+    # 添加标题行
+    csv_data.append(['课程代码', '课程名称', '教师', '学分', '学期', '成绩'])
+
+    # 添加数据行
+    for grade in grades:
+        csv_data.append([
+            grade['code'],
+            grade['course_name'],
+            grade['teacher_name'] or '未指定',
+            grade['credits'],
+            grade['semester'],
+            grade['score']
+        ])
+
+    # 创建响应
+    def generate():
+        """生成CSV数据"""
+        for row in csv_data:
+            # 将行转换为逗号分隔的字符串
+            line = ','.join(map(str, row)) + '\n'
+            yield line.encode('utf-8')
+
+    # 创建CSV内容字符串
+    csv_content = ""
+    for row in csv_data:
+        # 将行转换为逗号分隔的字符串
+        line = ','.join(map(str, row)) + '\n'
+        csv_content += line
+
+    return Response(
+        csv_content,
+        mimetype='text/csv',
+        headers={
+            'Content-Disposition': f'attachment; filename=grades_{user["name"]}_{datetime.now().strftime("%Y%m%d")}.csv'
+        }
+    )
+
 # 学生仪表盘
 @app.route("/students/dashboard")
 @login_required
@@ -1941,7 +2069,7 @@ def import_grades():
 # 导出成绩
 @app.route("/grades/export")
 @login_required
-def export_grades():
+def export_all_grades():
     conn = get_db_connection()
 
     # 获取筛选条件
